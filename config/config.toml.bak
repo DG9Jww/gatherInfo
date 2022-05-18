@@ -1,0 +1,24 @@
+[subdomain]
+enabled = true
+domain = "xx.com"
+
+fofaKey = "xxxxxxxxxx"
+fofaEmail ="xxxxxxxxxx"
+
+censysKey = "xxxxxxxxxx"
+censysID = "xxxxxxxxxx"
+    
+[portscan]
+Enabled = false
+
+[dirscan]
+enabled = false
+urlList = []
+dic = ""
+coroutine = 40
+
+[fingerprint]
+Enabled = false
+
+[vulnerability]
+Enabled = false

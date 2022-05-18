@@ -1,0 +1,119 @@
+package common
+
+import (
+	"bufio"
+	"math/rand"
+	"os"
+	"regexp"
+	"strconv"
+	"strings"
+)
+
+func StringToSlice(target string, sep string) []string {
+	t := strings.TrimSpace(target)
+	return strings.Split(t, sep)
+}
+
+//covert text row by row to string string
+func FileToSlice(f *os.File) []string {
+	scanner := bufio.NewScanner(f)
+	var s []string
+	for scanner.Scan() {
+		s = append(s, scanner.Text())
+	}
+	return s
+}
+
+func MatchStr(substr string, str string) bool {
+	ok, _ := regexp.MatchString(substr, str)
+	if ok {
+		return true
+	} else {
+		return false
+	}
+}
+
+func MatchInt(i int, list []int) bool {
+	for _, v := range list {
+		if i == v {
+			return true
+		}
+	}
+	return false
+}
+
+func IsStringInSlice(str string, list []string) bool {
+	for _, item := range list {
+		if item == str {
+			return true
+		}
+	}
+	return false
+}
+
+func PortToList(s string) []int {
+	if MatchStr("-", s) {
+		list := strings.Split(s, "-")
+		min, err := strconv.Atoi(list[0])
+		if err != nil {
+			return nil
+		}
+		max, err := strconv.Atoi(list[1])
+		if err != nil {
+			return nil
+		}
+
+		var ports []int
+		for min <= max {
+			ports = append(ports, min)
+			min++
+		}
+		return ports
+	} else {
+		list := strings.Split(s, ",")
+
+		var ports []int
+		for _, port := range list {
+			p, err := strconv.Atoi(port)
+			if err != nil {
+				return nil
+			}
+			ports = append(ports, p)
+		}
+		return ports
+	}
+}
+
+func GetMinInt(list []int) int {
+	var min int
+	if len(list) != 0 {
+		min = list[0]
+		for _, v := range list {
+			if v < min {
+				min = v
+			}
+		}
+	}
+	return min
+}
+
+func GetMaxInt(list []int) int {
+	var max int
+	if len(list) != 0 {
+		max = list[0]
+		for _, v := range list {
+			if v > max {
+				max = v
+			}
+		}
+		return max
+	}
+	return max
+}
+
+func RandomInt64(min, max int64) int64 {
+	if min >= max || min == 0 || max == 0 {
+		return max
+	}
+	return rand.Int63n(max-min) + min
+}
