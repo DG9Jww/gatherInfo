@@ -23,10 +23,11 @@ var (
 	snapshot int32         = 65535
 	promisc  bool          = true
 	myHandle *pcap.Handle
+	myEthTab ethTable
 )
 
 type bruter struct {
-	domain string
+	domain []string
 
 	//interface information
 	ethTab ethTable
@@ -40,22 +41,14 @@ type bruter struct {
 	//from 40000 to 60000,self-increasing
 	srcPort uint16
 
-	//rate of sending packet
+	//rate of sending packet,unit is byte
 	rate int64
-
-<<<<<<< HEAD
-	//save statusTable
-	//statusTabChan chan statusTable
 
 	//a including domain chan and waiting for retry
 	retryChan chan *statusTable
 
 	//
 	statusTabList []statusTable
-=======
-	//
-	statusTabChan chan statusTable
->>>>>>> a974f4de79b9a00725fb2cdad7a1d25100f010e0
 }
 
 //interface information
@@ -72,18 +65,15 @@ type statusTable struct {
 
 	//sending packet time
 	time time.Time
-<<<<<<< HEAD
-=======
 
 	//last resolver used
 	resolver string
->>>>>>> a974f4de79b9a00725fb2cdad7a1d25100f010e0
 
 	//the amount of attempts
 	retry int8
 }
 
-func newBruter(bandwith int64) *bruter {
+func newBruter(cfg *config.SubDomainConfig) *bruter {
 	dev := common.AutoGetDevice()
 	src_mac, _ := net.ParseMAC(dev["srcMAC"])
 	dst_mac, _ := net.ParseMAC(dev["dstMAC"])
@@ -95,20 +85,22 @@ func newBruter(bandwith int64) *bruter {
 	}
 
 	packetSize := int64(100) //the size of DNS packet is about 74
-	myRate := bandwith / packetSize
+	myRate := cfg.BandWidth / packetSize
 	myHandle, _ = pcap.OpenLive(myEthTab.devName, snapshot, promisc, timeout)
 	b := &bruter{
+		domain:    cfg.Domain,
 		ethTab:    myEthTab,
 		resolvers: []string{"223.5.5.5", "223.6.6.6", "180.76.76.76", "119.29.29.29", "114.114.114.115"},
 		handle:    myHandle,
 		srcPort:   40000,
 		rate:      myRate,
+		retryChan: make(chan *statusTable, myRate),
 	}
 	return b
 }
 
 func Run(cfg *config.SubDomainConfig) {
-	bruter := newBruter(cfg.BandWith)
+	bruter := newBruter(cfg)
 	defer bruter.handle.Close()
 
 	//limit the rate according to the bandwith option
@@ -119,36 +111,40 @@ func Run(cfg *config.SubDomainConfig) {
 	file := common.LoadFile(cfg.BruteDict)
 	scanner := bufio.NewScanner(file)
 
-	// a goroutine for retry
+	//Throught continuous cycle detection,put the time out statusTable into retryChan
 	go func() {
-<<<<<<< HEAD
 		for {
 			bruter.checkTimeout()
-			for table := range bruter.retryChan {
-				resolver := bruter.getResolver()
-				flagID := getFlagID()
-				bruter.sendDNS(table.domain, resolver, flagID)
-				table.retry++
-			}
 		}
-=======
-		<-bruter.statusTabChan
->>>>>>> a974f4de79b9a00725fb2cdad7a1d25100f010e0
 	}()
 
+	// A goroutine for retry.
+	//Trying to get statusTable from retryChan and
+	//send packet one more time
+	go func(l *rate.Limiter) {
+		for table := range bruter.retryChan {
+			resolver := bruter.getResolver()
+			flagID := getFlagID()
+			l.Wait(ctx)
+			bruter.sendDNS(table.domain, resolver, flagID)
+			table.retry++
+		}
+	}(limiter)
+
 	//send packet
-	for scanner.Scan() {
-		//get parameters
-		domain := scanner.Text() + "." + bruter.domain
-		resolver := bruter.getResolver()
-		flagID := getFlagID()
+	for _, mainDomain := range bruter.domain {
+		for scanner.Scan() {
+			//get parameters
+			domain := scanner.Text() + "." + mainDomain
+			resolver := bruter.getResolver()
+			flagID := getFlagID()
 
-		//limit rate
-		limiter.Wait(ctx)
-		//record status and send DNS packet
-		bruter.recordStatus(domain, resolver)
-		bruter.sendDNS(domain, resolver, flagID)
-
+			//limit rate
+			limiter.Wait(ctx)
+			//record status and send DNS packet
+			bruter.recordStatus(domain, resolver)
+			bruter.sendDNS(domain, resolver, flagID)
+		}
 	}
 }
 
@@ -164,23 +160,16 @@ func getFlagID() uint16 {
 
 //record status on statusTable
 func (bru *bruter) recordStatus(domain, resolver string) {
-<<<<<<< HEAD
 	tab := statusTable{domain: domain, retry: 0, time: time.Now()}
 	bru.statusTabList = append(bru.statusTabList, tab)
 }
 
 //check the timeout item from statusTableChan
 //and channel the timeout item into retryChan
-func (bru *bruter) checkTimeout() bool {
-	var signal bool = false
+func (bru *bruter) checkTimeout() {
 	for _, tab := range bru.statusTabList {
 		if time.Since(tab.time) > time.Second*5 && tab.retry < 1 {
 			bru.retryChan <- &tab
-			signal = true
 		}
 	}
-	return signal
-=======
-	bru.statusTabChan <- statusTable{domain: domain, resolver: resolver, retry: 0, time: time.Now()}
->>>>>>> a974f4de79b9a00725fb2cdad7a1d25100f010e0
 }

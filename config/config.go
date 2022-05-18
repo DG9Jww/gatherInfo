@@ -32,10 +32,10 @@ type MyConfig struct {
 
 //subdomain config
 type SubDomainConfig struct {
-	Domain    string
+	Domain    []string
 	FofaKey   string
 	FofaEmail string
-	BandWith  int64
+	BandWidth int64
 	CensysID  string
 	CensysKey string
 	BruteDict string
@@ -121,9 +121,9 @@ func SubDomainInit(cfg *SubDomainConfig) {
 			logger.ConsoleLog(logger.NORMAL, "Running SubDomain......")
 		},
 	}
-	subDomainCmd.Flags().StringVarP(&cfg.Domain, "domain", "d", "", "Target Main Domain,such as 'google.com'")
-	subDomainCmd.Flags().Int64VarP(&cfg.BandWith, "bandwith", "b", 1000000, "BandWith,unit is byte")
-	subDomainCmd.Flags().StringVarP(&cfg.BruteDict, "dict", "p", "dict/dns.txt", "Brute Dictionary Path")
+	subDomainCmd.Flags().StringSliceVarP(&cfg.Domain, "domain", "d", nil, "Target Main Domain,such as 'google.com'")
+	subDomainCmd.Flags().Int64VarP(&cfg.BandWidth, "bandwith", "b", 1000000, "BandWith,unit is byte")
+	subDomainCmd.Flags().StringVarP(&cfg.BruteDict, "dict", "p", "dict/dns.txt", "Payload Dictionary Path For Brute")
 	cfg.FofaKey = viper.GetString("subdomain.fofaKey")
 	cfg.FofaEmail = viper.GetString("subdomain.fofaEmail")
 	cfg.CensysID = viper.GetString("subdomain.censysID")

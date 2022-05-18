@@ -36,8 +36,6 @@ integrate 'collect subdomain','directory scan','port scan',and 'fingerprint scan
 ## NOTE
 - 赶快学习context
 - 原子操作
-<<<<<<< HEAD
 - 链表
-=======
-- 判断源端口
->>>>>>> a974f4de79b9a00725fb2cdad7a1d25100f010e0
+- 泛解析问题
+- 一个问题，如果用一些不同IP来当解析器的话，发现结果有误且不同，是否要改成路由器
