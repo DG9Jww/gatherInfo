@@ -41,7 +41,7 @@ func (cli *client) Run(isSubdomain bool) {
 		snapshot int32 = 65535
 		promisc  bool  = true
 	)
-	//set time out to 1 microsecond in case some bug
+	//set time out to 1 microsecond to fix some bug
 	handle, _ := pcap.OpenLive(ethTab.devName, snapshot, promisc, time.Microsecond*1)
 	defer handle.Close()
 	//	go cli.recvPackets(handle)

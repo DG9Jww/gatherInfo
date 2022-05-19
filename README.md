@@ -1,8 +1,6 @@
 # gatherInfo
 
-
 integrate 'collect subdomain','directory scan','port scan',and 'fingerprint scan'
-
 
 子域名模块
 
@@ -39,3 +37,5 @@ integrate 'collect subdomain','directory scan','port scan',and 'fingerprint scan
 - 链表
 - 泛解析问题
 - 一个问题，如果用一些不同IP来当解析器的话，发现结果有误且不同，是否要改成路由器
+- 问题：怎么结束程序，肯定不能睡眠吧，想法：
+- 问题：数据提取没搞好

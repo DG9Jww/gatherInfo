@@ -58,7 +58,6 @@ func (bru *bruter) sendDNS(domain string, resolverIP string, flagID uint16) {
 			Class: layers.DNSClassIN,
 		})
 
-	fmt.Println(domain)
 	//compute sum
 	err := udpLayer.SetNetworkLayerForChecksum(ipLayer)
 	if err != nil {
@@ -87,8 +86,9 @@ func (bru *bruter) sendDNS(domain string, resolverIP string, flagID uint16) {
 }
 
 //receive dns packets
-func (bru *bruter) recvDNS(domain string, resolverIP string, srcPort uint16, flagID uint16) {
-	handle, _ := pcap.OpenLive(myEthTab.devName, snapshot, promisc, timeout)
+func (bru *bruter) recvDNS(signal chan bool) {
+	handle, _ := pcap.OpenLive(myEthTab.devName, snapshot, promisc, pcap.BlockForever)
+	defer handle.Close()
 	err := handle.SetBPFFilter("udp and src port 53")
 	if err != nil {
 		logger.ConsoleLog(logger.ERROR, "SetBPFFilter Failed,", err.Error())
@@ -105,8 +105,27 @@ func (bru *bruter) recvDNS(domain string, resolverIP string, srcPort uint16, fla
 		layers.LayerTypeEthernet, &ethLayer, &ipv4Layer, &ipv6Layer, &udpLayer, &dnsLayer)
 	var decodedLayers []gopacket.LayerType
 
+	//recv goroutine is ready
+	close(signal)
 	for {
-		//get packet
+
+		/*
+			5.19
+			Here I got some issues.
+			When the network environment is pure,the program was always stuck here
+			because here is no more packet and this function can not read any packet.
+
+			How to solve this issues?
+			I set the parameter "timeout" to 1 millisecond and use NextPacket to read packet.
+			"packetChan := packetSource.Packet()" is doesn't work
+
+			10 mins later......
+			Well,I found I didn't get the point.
+			The point is that the goroutine for receive DNS packet is inefficient.
+			When my machine receives all DNS response packets,the recvDNS goroutine is only starting.
+			So I try to make a trigger before sending packet.When recv goroutine is ready,sending
+			packets goroutine start.
+		*/
 		packet, err := packetSource.NextPacket()
 		if err != nil {
 			continue
@@ -121,15 +140,59 @@ func (bru *bruter) recvDNS(domain string, resolverIP string, srcPort uint16, fla
 		//QR = 0 witch means it's a query packet
 		//QR = 1 witch means it's a response packet
 		if !dnsLayer.QR {
+			fmt.Println(dnsLayer.QR)
 			continue
 		}
+		fmt.Println("44444444444")
 
 		//Throught verifying packet type and IP address,
 		//we can confirm that it is the packet what we need
 		if !common.IsStringInSlice(ipv4Layer.SrcIP.String(), bru.resolvers) {
 			continue
 		}
+		fmt.Println("33333333333")
 
-		//now start analysing the packet
+		//Reply code equal 0 means no error.
+		//Besides,most of time,it will be set to 3 which means the subdomain doesn't exist.
+		if dnsLayer.ResponseCode != 0 {
+			continue
+		}
+
+		fmt.Println("22222222222")
+		//no answer
+		if dnsLayer.ANCount == 0 && dnsLayer.ARCount == 0 && dnsLayer.NSCount == 0 {
+			continue
+		}
+
+		fmt.Println("11111111111")
+		//now we get the packet what we want
+		var res string
+		//invalid
+		if len(dnsLayer.Questions) == 0 {
+			continue
+		}
+		subdomain := string(dnsLayer.Questions[0].Name)
+		res += subdomain
+		//answers
+		if dnsLayer.ANCount > 0 {
+			for _, v := range dnsLayer.Answers {
+				res += v.String()
+			}
+		}
+
+		//authoritative nameservers
+		if dnsLayer.NSCount > 0 {
+			for _, v := range dnsLayer.Answers {
+				res += v.String()
+			}
+		}
+
+		//additional record
+		if dnsLayer.ARCount > 0 {
+			for _, v := range dnsLayer.Answers {
+				res += v.String()
+			}
+		}
+		logger.ConsoleLog(logger.NORMAL, res)
 	}
 }

@@ -21,9 +21,12 @@ import (
 var (
 	timeout  time.Duration = -1 * time.Second
 	snapshot int32         = 65535
-	promisc  bool          = true
+	promisc  bool          = false
 	myHandle *pcap.Handle
 	myEthTab ethTable
+
+	//signal for starting sending DNS packets
+	signal = make(chan bool)
 )
 
 type bruter struct {
@@ -48,7 +51,7 @@ type bruter struct {
 	retryChan chan *statusTable
 
 	//
-	statusTabList []statusTable
+	statusTabList []*statusTable
 }
 
 //interface information
@@ -71,13 +74,16 @@ type statusTable struct {
 
 	//the amount of attempts
 	retry int8
+
+	//status,0 unsent,1 sent
+	status uint8
 }
 
 func newBruter(cfg *config.SubDomainConfig) *bruter {
 	dev := common.AutoGetDevice()
 	src_mac, _ := net.ParseMAC(dev["srcMAC"])
 	dst_mac, _ := net.ParseMAC(dev["dstMAC"])
-	myEthTab := ethTable{
+	myEthTab = ethTable{
 		devName: dev["devName"],
 		srcMAC:  src_mac,
 		srcIP:   net.ParseIP(dev["srcIP"]),
@@ -86,11 +92,13 @@ func newBruter(cfg *config.SubDomainConfig) *bruter {
 
 	packetSize := int64(100) //the size of DNS packet is about 74
 	myRate := cfg.BandWidth / packetSize
+
 	myHandle, _ = pcap.OpenLive(myEthTab.devName, snapshot, promisc, timeout)
 	b := &bruter{
 		domain:    cfg.Domain,
 		ethTab:    myEthTab,
-		resolvers: []string{"223.5.5.5", "223.6.6.6", "180.76.76.76", "119.29.29.29", "114.114.114.115"},
+		resolvers: []string{"223.5.5.5", "223.6.6.6", "180.76.76.76", "119.29.29.29", "114.114.115.115"},
+		//resolvers: []string{"8.8.8.8", "1.0.0.1", "8.8.4.4", "1.1.1.1"},
 		handle:    myHandle,
 		srcPort:   40000,
 		rate:      myRate,
@@ -109,7 +117,13 @@ func Run(cfg *config.SubDomainConfig) {
 
 	//load dictionary
 	file := common.LoadFile(cfg.BruteDict)
+	defer file.Close()
 	scanner := bufio.NewScanner(file)
+
+	//a goroutine for receive
+	go func(chan bool) {
+		bruter.recvDNS(signal)
+	}(signal)
 
 	//Throught continuous cycle detection,put the time out statusTable into retryChan
 	go func() {
@@ -127,11 +141,14 @@ func Run(cfg *config.SubDomainConfig) {
 			flagID := getFlagID()
 			l.Wait(ctx)
 			bruter.sendDNS(table.domain, resolver, flagID)
+			table.status = 1
 			table.retry++
+			table.time = time.Now()
 		}
 	}(limiter)
 
 	//send packet
+	<-signal
 	for _, mainDomain := range bruter.domain {
 		for scanner.Scan() {
 			//get parameters
@@ -142,10 +159,13 @@ func Run(cfg *config.SubDomainConfig) {
 			//limit rate
 			limiter.Wait(ctx)
 			//record status and send DNS packet
-			bruter.recordStatus(domain, resolver)
+			table := bruter.recordStatus(domain, resolver)
 			bruter.sendDNS(domain, resolver, flagID)
+			table.status = 1
 		}
 	}
+
+	time.Sleep(time.Second * 15)
 }
 
 //Get Random Resolver
@@ -159,17 +179,19 @@ func getFlagID() uint16 {
 }
 
 //record status on statusTable
-func (bru *bruter) recordStatus(domain, resolver string) {
-	tab := statusTable{domain: domain, retry: 0, time: time.Now()}
-	bru.statusTabList = append(bru.statusTabList, tab)
+func (bru *bruter) recordStatus(domain, resolver string) *statusTable {
+	tab := statusTable{domain: domain, retry: 0, time: time.Now(), status: 0}
+	bru.statusTabList = append(bru.statusTabList, &tab)
+	return bru.statusTabList[len(bru.statusTabList)-1]
 }
 
 //check the timeout item from statusTableChan
 //and channel the timeout item into retryChan
 func (bru *bruter) checkTimeout() {
 	for _, tab := range bru.statusTabList {
-		if time.Since(tab.time) > time.Second*5 && tab.retry < 1 {
-			bru.retryChan <- &tab
+		if time.Since(tab.time) > time.Second*5 && tab.retry < 2 && tab.status == 1 {
+			tab.status = 0
+			bru.retryChan <- tab
 		}
 	}
 }
