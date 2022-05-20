@@ -120,24 +120,34 @@ func Run(cfg *config.SubDomainConfig) {
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 
-	//a goroutine for receive
+	//     ===== a goroutine for receive =====
 	go func(chan bool) {
 		bruter.recvDNS(signal)
 	}(signal)
 
+	//     ===== a goroutine for check timeout packet =====
 	//Throught continuous cycle detection,put the time out statusTable into retryChan
-	go func() {
+	go func(chan bool) {
+		// in case checkTimeout panic
+		time.Sleep(time.Millisecond * 300)
 		for {
 			bruter.checkTimeout()
 		}
-	}()
+	}(signal)
 
-	// A goroutine for retry.
+	//    	===== A goroutine for retry =====
 	//Trying to get statusTable from retryChan and
 	//send packet one more time
 	go func(l *rate.Limiter) {
 		for table := range bruter.retryChan {
-			resolver := bruter.getResolver()
+			var resolver string
+			for {
+				resolver = bruter.getResolver()
+				if resolver == table.resolver {
+					continue
+				}
+				break
+			}
 			flagID := getFlagID()
 			l.Wait(ctx)
 			bruter.sendDNS(table.domain, resolver, flagID)
@@ -180,7 +190,7 @@ func getFlagID() uint16 {
 
 //record status on statusTable
 func (bru *bruter) recordStatus(domain, resolver string) *statusTable {
-	tab := statusTable{domain: domain, retry: 0, time: time.Now(), status: 0}
+	tab := statusTable{domain: domain, retry: 0, time: time.Now(), status: 0, resolver: resolver}
 	bru.statusTabList = append(bru.statusTabList, &tab)
 	return bru.statusTabList[len(bru.statusTabList)-1]
 }

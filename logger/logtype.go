@@ -14,7 +14,8 @@ var (
 	R50X = logType{color: PURPLE}
 
 	//subdomain
-	SUBDOMAIN = logType{color: LIGHT_GREEN, prefix: "[✓]"}
+	SUBDOMAIN  = logType{color: LIGHT_GREEN, prefix: "[✓]"}
+	SUBDOMAIN2 = logType{color: LIGHT_BLUE, prefix: "[✓]"}
 
 	//portscan
 	PORTSCAN = logType{color: LIGHT_BLUE}
@@ -22,3 +23,7 @@ var (
 	//fingerprint
 	FINGERPRINT = logType{color: LIGHT_YELLOW}
 )
+
+func CustomizeLog(color, prefix string) logType {
+	return logType{color: color, prefix: prefix}
+}

@@ -42,28 +42,22 @@ var (
 	CloseHandle *syscall.LazyProc = kernel32.NewProc(`CloseHandle`)
 )
 
-//func ConsoleLog(t logType, v ...interface{}) {
-//	logger * log.Logger = log.New(os.Stdout, "", 0)
-//
-//	if t.isProgress {
-//		//Move Curson to Specific Position
-//		logger.Printf("\033[%d;%df", t.row, t.colu)
-//		handle, _, _ := proc.Call(uintptr(syscall.Stdout), uintptr(t.color))
-//		logger.Println(t.prefix, v)
-//	}
-//	//If not progress bar
-//	fmt.Printf("\033[u")
-//	handle, _, _ := proc.Call(uintptr(syscall.Stdout), uintptr(t.color))
-//	logger.Println(t.prefix, v)
-//	fmt.Printf("\033[s")
-//	defer CloseHandle.Call(handle)
-//}
-
 func ConsoleLog(t logType, v ...interface{}) {
 	logger := log.New(os.Stdout, "", 0)
 	handle, _, _ := proc.Call(uintptr(syscall.Stdout), uintptr(t.color))
 	logger.Println(t.prefix, v)
 	defer CloseHandle.Call(handle)
+}
+
+func ConsoleLog2(t logType, v ...interface{}) {
+	logger := log.New(os.Stdout, "", 0)
+	//logger.Print("[", t.color, t.prefix, ENDC, "]", v)
+	logger.Print("[")
+	handle, _, _ := proc.Call(uintptr(syscall.Stdout), uintptr(t.color))
+	logger.Print(t.prefix)
+	defer CloseHandle.Call(handle)
+	logger.Print("]")
+	logger.Print(v)
 }
 
 func LogToFile(file *os.File, v ...interface{}) {

@@ -39,3 +39,8 @@ func LogToFile(file *os.File, v ...interface{}) {
 	logger := log.New(file, "", 0)
 	logger.Print(v...)
 }
+
+func ConsoleLog2(t logType, v string) {
+	logger := log.New(os.Stdout, "", 0)
+	logger.Printf("[%s%s%s] %s", t.color, t.prefix, ENDC, v)
+}

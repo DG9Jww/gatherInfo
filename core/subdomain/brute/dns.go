@@ -143,14 +143,12 @@ func (bru *bruter) recvDNS(signal chan bool) {
 			fmt.Println(dnsLayer.QR)
 			continue
 		}
-		fmt.Println("44444444444")
 
 		//Throught verifying packet type and IP address,
 		//we can confirm that it is the packet what we need
 		if !common.IsStringInSlice(ipv4Layer.SrcIP.String(), bru.resolvers) {
 			continue
 		}
-		fmt.Println("33333333333")
 
 		//Reply code equal 0 means no error.
 		//Besides,most of time,it will be set to 3 which means the subdomain doesn't exist.
@@ -158,13 +156,11 @@ func (bru *bruter) recvDNS(signal chan bool) {
 			continue
 		}
 
-		fmt.Println("22222222222")
 		//no answer
 		if dnsLayer.ANCount == 0 && dnsLayer.ARCount == 0 && dnsLayer.NSCount == 0 {
 			continue
 		}
 
-		fmt.Println("11111111111")
 		//now we get the packet what we want
 		var res string
 		//invalid
@@ -172,27 +168,12 @@ func (bru *bruter) recvDNS(signal chan bool) {
 			continue
 		}
 		subdomain := string(dnsLayer.Questions[0].Name)
-		res += subdomain
 		//answers
 		if dnsLayer.ANCount > 0 {
 			for _, v := range dnsLayer.Answers {
-				res += v.String()
+				res += " => " + v.String()
 			}
 		}
-
-		//authoritative nameservers
-		if dnsLayer.NSCount > 0 {
-			for _, v := range dnsLayer.Answers {
-				res += v.String()
-			}
-		}
-
-		//additional record
-		if dnsLayer.ARCount > 0 {
-			for _, v := range dnsLayer.Answers {
-				res += v.String()
-			}
-		}
-		logger.ConsoleLog(logger.NORMAL, res)
+		logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, subdomain), res)
 	}
 }
