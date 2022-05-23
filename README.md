@@ -4,6 +4,8 @@ integrate 'collect subdomain','directory scan','port scan',and 'fingerprint scan
 
 子域名模块
 
+- 子域名爆破，支持强制爆破泛解析域名，比较粗糙，搞个黑名单直接丢弃。这样子不行,计算权重还是比较好
+- 状态表用以记录每个数据包的状态，超时则会重发，重发两次,尽可能解决丢包问题。由于每个数据包都会存在状态表,因此会牺牲内存，用内存换准确性。
 - [ ] 备案号查询。先通过查询系统域名备案号，再通过备案号反查与备案号相关的域名 
 - http://www.beianbeian.com
 - http://icp.bugscaner.com
@@ -35,5 +37,5 @@ integrate 'collect subdomain','directory scan','port scan',and 'fingerprint scan
 - 赶快学习context
 - 原子操作
 - 链表
-- 泛解析问题
 - 问题：怎么结束程序，肯定不能睡眠吧，想法：判断statusTableList是否为空？为空就结束程序（需要用到链表）
+

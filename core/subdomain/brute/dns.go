@@ -19,7 +19,13 @@ var (
 		FixLengths:       true,
 		ComputeChecksums: true,
 	}
+	bruteResults []RecvResults
 )
+
+type RecvResults struct {
+	subdomain string
+	answers   []layers.DNSResourceRecord
+}
 
 //send DNS packet
 func (bru *bruter) sendDNS(domain string, resolverIP string, flagID uint16) {
@@ -86,7 +92,7 @@ func (bru *bruter) sendDNS(domain string, resolverIP string, flagID uint16) {
 }
 
 //receive dns packets
-func (bru *bruter) recvDNS(signal chan bool) {
+func (bru *bruter) recvDNS(signal chan bool, filterWildCard bool) {
 	handle, _ := pcap.OpenLive(myEthTab.devName, snapshot, promisc, pcap.BlockForever)
 	defer handle.Close()
 	err := handle.SetBPFFilter("udp and src port 53")
@@ -171,9 +177,23 @@ func (bru *bruter) recvDNS(signal chan bool) {
 		//answers
 		if dnsLayer.ANCount > 0 {
 			for _, v := range dnsLayer.Answers {
-				res += " => " + v.String()
+				//process wildcard domain name
+				if filterWildCard {
+					ip := getIPFromRecord(v)
+					if bru.checkBlackList(ip) {
+						continue
+					} else {
+						res += " => " + v.String()
+						logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, subdomain), res)
+					}
+				} else {
+					res += " => " + v.String()
+					logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, subdomain), res)
+				}
 			}
+			//query packet and delete packet
+			tmpResult := RecvResults{subdomain: subdomain, answers: dnsLayer.Answers}
+			bruteResults = append(bruteResults, tmpResult)
 		}
-		logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, subdomain), res)
 	}
 }

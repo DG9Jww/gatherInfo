@@ -7,6 +7,7 @@ package brute
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"net"
 	"time"
 
@@ -14,6 +15,7 @@ import (
 
 	"github.com/DG9Jww/gatherInfo/common"
 	"github.com/DG9Jww/gatherInfo/config"
+	"github.com/DG9Jww/gatherInfo/logger"
 	"github.com/google/gopacket/pcap"
 	"golang.org/x/time/rate"
 )
@@ -50,8 +52,11 @@ type bruter struct {
 	//a including domain chan and waiting for retry
 	retryChan chan *statusTable
 
-	//
+	//record packets status
 	statusTabList []*statusTable
+
+	//for wildcard domain name
+	blackList []string
 }
 
 //interface information
@@ -65,6 +70,8 @@ type ethTable struct {
 //status table
 type statusTable struct {
 	domain string
+
+	srcPort uint16
 
 	//sending packet time
 	time time.Time
@@ -122,14 +129,12 @@ func Run(cfg *config.SubDomainConfig) {
 
 	//     ===== a goroutine for receive =====
 	go func(chan bool) {
-		bruter.recvDNS(signal)
+		bruter.recvDNS(signal, cfg.WildCard)
 	}(signal)
 
 	//     ===== a goroutine for check timeout packet =====
 	//Throught continuous cycle detection,put the time out statusTable into retryChan
 	go func(chan bool) {
-		// in case checkTimeout panic
-		time.Sleep(time.Millisecond * 300)
 		for {
 			bruter.checkTimeout()
 		}
@@ -150,6 +155,7 @@ func Run(cfg *config.SubDomainConfig) {
 			}
 			flagID := getFlagID()
 			l.Wait(ctx)
+			table.srcPort = bruter.srcPort
 			bruter.sendDNS(table.domain, resolver, flagID)
 			table.status = 1
 			table.retry++
@@ -157,10 +163,24 @@ func Run(cfg *config.SubDomainConfig) {
 		}
 	}(limiter)
 
-	//send packet
-	<-signal
+	//     ======== send packet ========
+	//detect wildcard domain name
 	for _, mainDomain := range bruter.domain {
-		for scanner.Scan() {
+		ok, blackList := bruter.isWildCard(mainDomain)
+		if ok {
+			if cfg.WildCard {
+				logger.ConsoleLog2(logger.CustomizeLog(logger.YELLOW, "WARNING"), fmt.Sprintf("Detected Wildcard Domain: [%s]  BlackList: %v ", mainDomain, blackList))
+			} else {
+				logger.ConsoleLog2(logger.CustomizeLog(logger.YELLOW, "WARNING"), fmt.Sprintf("Detected Wildcard Domain: [%s]  BlackList: %v ,Skip!", mainDomain, blackList))
+				continue
+			}
+		}
+	}
+
+	//
+	<-signal
+	for scanner.Scan() {
+		for _, mainDomain := range bruter.domain {
 			//get parameters
 			domain := scanner.Text() + "." + mainDomain
 			resolver := bruter.getResolver()
@@ -169,7 +189,7 @@ func Run(cfg *config.SubDomainConfig) {
 			//limit rate
 			limiter.Wait(ctx)
 			//record status and send DNS packet
-			table := bruter.recordStatus(domain, resolver)
+			table := bruter.recordStatus(domain, resolver, bruter.srcPort)
 			bruter.sendDNS(domain, resolver, flagID)
 			table.status = 1
 		}
@@ -189,8 +209,8 @@ func getFlagID() uint16 {
 }
 
 //record status on statusTable
-func (bru *bruter) recordStatus(domain, resolver string) *statusTable {
-	tab := statusTable{domain: domain, retry: 0, time: time.Now(), status: 0, resolver: resolver}
+func (bru *bruter) recordStatus(domain, resolver string, srcPort uint16) *statusTable {
+	tab := statusTable{domain: domain, retry: 0, time: time.Now(), status: 0, resolver: resolver, srcPort: srcPort}
 	bru.statusTabList = append(bru.statusTabList, &tab)
 	return bru.statusTabList[len(bru.statusTabList)-1]
 }
@@ -198,6 +218,9 @@ func (bru *bruter) recordStatus(domain, resolver string) *statusTable {
 //check the timeout item from statusTableChan
 //and channel the timeout item into retryChan
 func (bru *bruter) checkTimeout() {
+	if bru.statusTabList == nil {
+		return
+	}
 	for _, tab := range bru.statusTabList {
 		if time.Since(tab.time) > time.Second*5 && tab.retry < 2 && tab.status == 1 {
 			tab.status = 0
