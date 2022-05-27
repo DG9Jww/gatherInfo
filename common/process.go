@@ -117,3 +117,11 @@ func RandomInt64(min, max int64) int64 {
 	}
 	return rand.Int63n(max-min) + min
 }
+
+//delete item according index
+func DeleteStringFromSlice(strSlice []string, index int) []string {
+	tmp1 := strSlice[:index]
+	tmp2 := strSlice[index+1:]
+	tmp3 := append(tmp1, tmp2...)
+	return tmp3
+}

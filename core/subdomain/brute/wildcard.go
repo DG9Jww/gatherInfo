@@ -49,7 +49,3 @@ func (bru *bruter) checkBlackList(record string) bool {
 	}
 	return false
 }
-
-//func getIPFromRecord(record layers.DNSResourceRecord) (ip string) {
-//	return record.String()
-//}

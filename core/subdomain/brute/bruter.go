@@ -168,7 +168,7 @@ func Run(cfg *config.SubDomainConfig) {
 	//       ============ detect wildcard domain name ===============
 	<-sendingSignal
 	logger.ConsoleLog2(logger.NORMAL, "Detecting WildCard Domain Name......")
-	for _, mainDomain := range bruter.domain {
+	for index, mainDomain := range bruter.domain {
 		//determine whether the domain name is wildcard domain
 		ok, blackList := bruter.isWildCard(mainDomain)
 		if ok {
@@ -176,6 +176,8 @@ func Run(cfg *config.SubDomainConfig) {
 				logger.ConsoleLog2(logger.CustomizeLog(logger.YELLOW, "WARNING"), fmt.Sprintf("Detected Wildcard Domain: [%s]  BlackList: %v ", mainDomain, blackList))
 			} else {
 				logger.ConsoleLog2(logger.CustomizeLog(logger.YELLOW, "WARNING"), fmt.Sprintf("Detected Wildcard Domain: [%s]  BlackList: %v ,Skip!", mainDomain, blackList))
+				//remove item because wildcard
+				bruter.domain = common.DeleteStringFromSlice(bruter.domain, index)
 				continue
 			}
 		}
@@ -186,8 +188,6 @@ func Run(cfg *config.SubDomainConfig) {
 		for res := range bruteResults {
 			var printer string
 			for _, record := range res.records {
-				//logger.ConsoleLog2(logger.CustomizeLog(logger.YELLOW, res.subdomain), record.String())
-				//process wildcard domain name
 				if filterWildCard {
 					if bruter.checkBlackList(record) {
 						continue
@@ -205,6 +205,9 @@ func Run(cfg *config.SubDomainConfig) {
 	}(cfg.WildCard)
 
 	//     ============ sending packets ==============
+	if len(bruter.domain) == 0 {
+		return
+	}
 	for scanner.Scan() {
 		for _, mainDomain := range bruter.domain {
 			//get parameters
@@ -243,6 +246,7 @@ func (bru *bruter) recordStatus(domain, resolver string, srcPort uint16) *status
 //check the timeout item from statusTableChan
 //and channel the timeout item into retryChan
 func (bru *bruter) checkTimeout() {
+	// in case panic
 	if len(bru.statusTabList) == 0 {
 		return
 	}
