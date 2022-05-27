@@ -28,7 +28,8 @@ var (
 	myEthTab ethTable
 
 	//signal for starting sending DNS packets
-	signal = make(chan bool)
+	sendingSignal = make(chan bool)
+	bruteResults  = make(chan RecvResults, 100)
 )
 
 type bruter struct {
@@ -116,6 +117,7 @@ func newBruter(cfg *config.SubDomainConfig) *bruter {
 
 func Run(cfg *config.SubDomainConfig) {
 	bruter := newBruter(cfg)
+
 	defer bruter.handle.Close()
 
 	//limit the rate according to the bandwith option
@@ -127,18 +129,18 @@ func Run(cfg *config.SubDomainConfig) {
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 
-	//     ===== a goroutine for receive =====
+	//     ===== a goroutine for receiving DNS packet =====
 	go func(chan bool) {
-		bruter.recvDNS(signal, cfg.WildCard)
-	}(signal)
+		bruter.recvDNS(sendingSignal)
+	}(sendingSignal)
 
 	//     ===== a goroutine for check timeout packet =====
 	//Throught continuous cycle detection,put the time out statusTable into retryChan
-	go func(chan bool) {
+	go func() {
 		for {
 			bruter.checkTimeout()
 		}
-	}(signal)
+	}()
 
 	//    	===== A goroutine for retry =====
 	//Trying to get statusTable from retryChan and
@@ -163,9 +165,11 @@ func Run(cfg *config.SubDomainConfig) {
 		}
 	}(limiter)
 
-	//     ======== send packet ========
-	//detect wildcard domain name
+	//       ============ detect wildcard domain name ===============
+	<-sendingSignal
+	logger.ConsoleLog2(logger.NORMAL, "Detecting WildCard Domain Name......")
 	for _, mainDomain := range bruter.domain {
+		//determine whether the domain name is wildcard domain
 		ok, blackList := bruter.isWildCard(mainDomain)
 		if ok {
 			if cfg.WildCard {
@@ -177,8 +181,30 @@ func Run(cfg *config.SubDomainConfig) {
 		}
 	}
 
-	//
-	<-signal
+	//     ======== a goroutine for processing results
+	go func(filterWildCard bool) {
+		for res := range bruteResults {
+			var printer string
+			for _, record := range res.records {
+				//logger.ConsoleLog2(logger.CustomizeLog(logger.YELLOW, res.subdomain), record.String())
+				//process wildcard domain name
+				if filterWildCard {
+					if bruter.checkBlackList(record) {
+						continue
+					} else {
+						printer += " => " + record
+					}
+				} else {
+					printer += " => " + record
+				}
+			}
+			if printer != "" {
+				logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, res.subdomain), printer)
+			}
+		}
+	}(cfg.WildCard)
+
+	//     ============ sending packets ==============
 	for scanner.Scan() {
 		for _, mainDomain := range bruter.domain {
 			//get parameters
@@ -194,7 +220,6 @@ func Run(cfg *config.SubDomainConfig) {
 			table.status = 1
 		}
 	}
-
 	time.Sleep(time.Second * 15)
 }
 
@@ -218,7 +243,7 @@ func (bru *bruter) recordStatus(domain, resolver string, srcPort uint16) *status
 //check the timeout item from statusTableChan
 //and channel the timeout item into retryChan
 func (bru *bruter) checkTimeout() {
-	if bru.statusTabList == nil {
+	if len(bru.statusTabList) == 0 {
 		return
 	}
 	for _, tab := range bru.statusTabList {

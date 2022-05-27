@@ -19,12 +19,11 @@ var (
 		FixLengths:       true,
 		ComputeChecksums: true,
 	}
-	bruteResults []RecvResults
 )
 
 type RecvResults struct {
 	subdomain string
-	answers   []layers.DNSResourceRecord
+	records   []string
 }
 
 //send DNS packet
@@ -92,7 +91,7 @@ func (bru *bruter) sendDNS(domain string, resolverIP string, flagID uint16) {
 }
 
 //receive dns packets
-func (bru *bruter) recvDNS(signal chan bool, filterWildCard bool) {
+func (bru *bruter) recvDNS(signal chan bool) {
 	handle, _ := pcap.OpenLive(myEthTab.devName, snapshot, promisc, pcap.BlockForever)
 	defer handle.Close()
 	err := handle.SetBPFFilter("udp and src port 53")
@@ -127,7 +126,7 @@ func (bru *bruter) recvDNS(signal chan bool, filterWildCard bool) {
 
 			10 mins later......
 			Well,I found I didn't get the point.
-			The point is that the goroutine for receive DNS packet is inefficient.
+			The point is that the goroutine for receiving DNS packet is inefficient.
 			When my machine receives all DNS response packets,the recvDNS goroutine is only starting.
 			So I try to make a trigger before sending packet.When recv goroutine is ready,sending
 			packets goroutine start.
@@ -168,7 +167,6 @@ func (bru *bruter) recvDNS(signal chan bool, filterWildCard bool) {
 		}
 
 		//now we get the packet what we want
-		var res string
 		//invalid
 		if len(dnsLayer.Questions) == 0 {
 			continue
@@ -176,24 +174,14 @@ func (bru *bruter) recvDNS(signal chan bool, filterWildCard bool) {
 		subdomain := string(dnsLayer.Questions[0].Name)
 		//answers
 		if dnsLayer.ANCount > 0 {
-			for _, v := range dnsLayer.Answers {
-				//process wildcard domain name
-				if filterWildCard {
-					ip := getIPFromRecord(v)
-					if bru.checkBlackList(ip) {
-						continue
-					} else {
-						res += " => " + v.String()
-						logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, subdomain), res)
-					}
-				} else {
-					res += " => " + v.String()
-					logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, subdomain), res)
-				}
-			}
 			//query packet and delete packet
-			tmpResult := RecvResults{subdomain: subdomain, answers: dnsLayer.Answers}
-			bruteResults = append(bruteResults, tmpResult)
+
+			tmpResult := RecvResults{subdomain: subdomain}
+			for _, record := range dnsLayer.Answers {
+				tmpResult.records = append(tmpResult.records, record.String())
+			}
+			bruteResults <- tmpResult
 		}
+
 	}
 }

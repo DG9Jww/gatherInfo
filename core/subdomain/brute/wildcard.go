@@ -1,9 +1,7 @@
 package brute
 
 import (
-	"net"
-
-	"github.com/google/gopacket/layers"
+	"time"
 )
 
 func (bru *bruter) isWildCard(domain string) (bool, []string) {
@@ -11,34 +9,47 @@ func (bru *bruter) isWildCard(domain string) (bool, []string) {
 	prefix2 := "donotexistdomain2"
 	var tmpList []string
 
-	domain = prefix + "." + domain
-	_, err := net.LookupIP(domain)
-	if err == nil {
-		//one more time
-		domain = prefix2 + "." + domain
-		ip, err := net.LookupIP(domain)
-		if err == nil {
-			//add ip to blackList
-			for _, v := range ip {
-				bru.blackList = append(bru.blackList, v.String())
-				tmpList = append(tmpList, v.String())
+	domainName := prefix + "." + domain
+	resolver := bru.getResolver()
+	flagID := getFlagID()
+	bru.sendDNS(domainName, resolver, flagID)
+	recvTimeout := time.After(time.Second * 3)
+	select {
+	case res := <-bruteResults:
+		for _, r := range res.records {
+			bru.blackList = append(bru.blackList, r)
+			tmpList = append(tmpList, r)
+		}
+		return true, tmpList
+	case <-recvTimeout:
+		//try again
+		domainName := prefix2 + "." + domain
+		resolver := bru.getResolver()
+		flagID := getFlagID()
+		bru.sendDNS(domainName, resolver, flagID)
+		recvTimeout := time.After(time.Second * 3)
+		select {
+		case <-recvTimeout:
+			return false, nil
+		case res := <-bruteResults:
+			for _, r := range res.records {
+				bru.blackList = append(bru.blackList, r)
+				tmpList = append(tmpList, r)
 			}
 			return true, tmpList
 		}
-		return false, nil
 	}
-	return false, nil
 }
 
-func (bru *bruter) checkBlackList(ip string) bool {
+func (bru *bruter) checkBlackList(record string) bool {
 	for _, v := range bru.blackList {
-		if ip == v {
+		if v == record {
 			return true
 		}
 	}
 	return false
 }
 
-func getIPFromRecord(record layers.DNSResourceRecord) (ip string) {
-	return record.String()
-}
+//func getIPFromRecord(record layers.DNSResourceRecord) (ip string) {
+//	return record.String()
+//}

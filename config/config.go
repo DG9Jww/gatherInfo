@@ -125,7 +125,7 @@ func SubDomainInit(cfg *SubDomainConfig) {
 	subDomainCmd.Flags().StringSliceVarP(&cfg.Domain, "domain", "d", nil, "Target Main Domain,such as 'google.com'")
 	subDomainCmd.Flags().Int64VarP(&cfg.BandWidth, "bandwith", "b", 1000000, "BandWith,unit is byte")
 	subDomainCmd.Flags().StringVarP(&cfg.BruteDict, "dict", "p", "dict/dns.txt", "Payload Dictionary Path For Brute")
-	subDomainCmd.Flags().BoolVarP(&cfg.WildCard, "wildcard", "w", false, "Skip Scanning WildCard Domain or Just Do It")
+	subDomainCmd.Flags().BoolVarP(&cfg.WildCard, "wildcard", "w", false, "Scanning wildCard domain name,default is closed")
 	cfg.FofaKey = viper.GetString("subdomain.fofaKey")
 	cfg.FofaEmail = viper.GetString("subdomain.fofaEmail")
 	cfg.CensysID = viper.GetString("subdomain.censysID")
