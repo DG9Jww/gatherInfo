@@ -27,7 +27,7 @@ type client struct {
 	payloadList []string
 
 	//results
-	results [][]interface{}
+	results []string
 
 	//count completed task
 	counter int
@@ -52,16 +52,16 @@ func NewClient(cfg *config.DirScanConfig) *client {
 	return c
 }
 
-func dirPrint(code int, file *os.File, content ...interface{}) {
+func dirPrint(code int, file *os.File, content string) {
 	switch {
 	case code >= 200 && code < 300:
-		logger.ConsoleLog(logger.R20X, content...)
+		logger.ConsoleLog(logger.R20X, content)
 	case code >= 300 && code < 400:
-		logger.ConsoleLog(logger.R30X, content...)
+		logger.ConsoleLog(logger.R30X, content)
 	case code >= 400 && code < 500:
-		logger.ConsoleLog(logger.R40X, content...)
+		logger.ConsoleLog(logger.R40X, content)
 	case code >= 500:
-		logger.ConsoleLog(logger.R50X, content...)
+		logger.ConsoleLog(logger.R50X, content)
 	}
 	logger.LogToFile(file, content)
 }

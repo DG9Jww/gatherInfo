@@ -52,7 +52,7 @@ func (cli *client) sendACK(port int, ip string, handle *pcap.Handle, ethTab *eth
 
 	conn, err := net.Dial("ip4:tcp", ip)
 	if err != nil {
-		logger.ConsoleLog(logger.ERROR, err)
+		logger.ConsoleLog(logger.ERROR, err.Error())
 	}
 	defer conn.Close()
 	conn.Write(buf.Bytes())
@@ -125,7 +125,7 @@ func (cli *client) recvPackets(devName string) {
 	defer handle.Close()
 	err := handle.SetBPFFilter("tcp and dst portrange 50000-55000")
 	if err != nil {
-		logger.ConsoleLog(logger.ERROR, "SetBPFFilter Failed:", err.Error())
+		logger.ConsoleLog(logger.ERROR, fmt.Sprintf("SetBPFFilter Failed:", err.Error()))
 	}
 
 	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())

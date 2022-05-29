@@ -20,13 +20,13 @@ func (cli *client) sendSyn(handle *pcap.Handle, lays ...gopacket.SerializableLay
 
 	err := gopacket.SerializeLayers(buf, option, lays...)
 	if err != nil {
-		logger.ConsoleLog(logger.ERROR, err)
+		logger.ConsoleLog(logger.ERROR, err.Error())
 		return
 	}
 	//flush and send packet
 	err = handle.WritePacketData(buf.Bytes())
 	if err != nil {
-		logger.ConsoleLog(logger.ERROR, err)
+		logger.ConsoleLog(logger.ERROR, err.Error())
 		return
 	}
 }
@@ -89,13 +89,13 @@ func (cli *client) synScan(port int, ip string, handle *pcap.Handle, ethTab *eth
 	buf := gopacket.NewSerializeBuffer()
 	err := gopacket.SerializeLayers(buf, option, ethLayer, ipLayer, tcpLayer, gopacket.Payload(payload))
 	if err != nil {
-		logger.ConsoleLog(logger.ERROR, err)
+		logger.ConsoleLog(logger.ERROR, err.Error())
 		return
 	}
 	//flush and send packet
 	err = handle.WritePacketData(buf.Bytes())
 	if err != nil {
-		logger.ConsoleLog(logger.ERROR, err)
+		logger.ConsoleLog(logger.ERROR, err.Error())
 		return
 	}
 	//for i := 0; i < 3; i++ {

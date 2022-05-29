@@ -1,6 +1,7 @@
 package dirscan
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"sync"
@@ -70,7 +71,7 @@ func (cli *client) DoRequest(url string, wg *sync.WaitGroup, file *os.File) func
 		code := resp.StatusCode
 		//if valid,processing the result
 		if common.MatchInt(code, cli.validCode) {
-			temp := []interface{}{code, url}
+			temp := fmt.Sprintf("%d %s", code, url)
 			//filter
 			if len(cli.filterStr) > 0 {
 				if common.MatchStr(cli.filterStr, string(body)) {
@@ -80,15 +81,16 @@ func (cli *client) DoRequest(url string, wg *sync.WaitGroup, file *os.File) func
 			//30X process
 			if common.MatchInt(code, []int{301, 302, 303, 307}) {
 				location, _ := resp.Location()
-				temp = []interface{}{code, url, "==>", location}
+				l := location.String()
+				temp = fmt.Sprintf("%d %s ===> %s", code, url, l)
 			} else {
-				temp = []interface{}{code, url, "Length:", len(body)}
+				temp = fmt.Sprintf("%d %s Length: %d", code, url, len(body))
 			}
 
 			cli.lock.Lock()
 			cli.results = append(cli.results, temp)
 			cli.lock.Unlock()
-			dirPrint(code, file, temp...)
+			dirPrint(code, file, temp)
 
 		}
 
@@ -114,7 +116,7 @@ func (cli *client) Scan(domain string, wg1 *sync.WaitGroup) func() {
 		path = "output/" + path + ".txt"
 		file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0666)
 		if err != nil {
-			logger.ConsoleLog(logger.ERROR, err)
+			logger.ConsoleLog(logger.ERROR, err.Error())
 		}
 		for _, payload := range cli.payloadList {
 			url := baseUrl + "/" + payload

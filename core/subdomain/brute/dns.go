@@ -72,13 +72,13 @@ func (bru *bruter) sendDNS(domain string, resolverIP string, flagID uint16) {
 	buf := gopacket.NewSerializeBuffer()
 	err = gopacket.SerializeLayers(buf, option, ethLayer, ipLayer, udpLayer, dnsLayer)
 	if err != nil {
-		logger.ConsoleLog(logger.ERROR, err)
+		logger.ConsoleLog(logger.ERROR, err.Error())
 		return
 	}
 	//flush and send packet
 	err = bru.handle.WritePacketData(buf.Bytes())
 	if err != nil {
-		logger.ConsoleLog(logger.ERROR, err)
+		logger.ConsoleLog(logger.ERROR, err.Error())
 		return
 	}
 
@@ -96,7 +96,7 @@ func (bru *bruter) recvDNS(signal chan bool) {
 	defer handle.Close()
 	err := handle.SetBPFFilter("udp and src port 53")
 	if err != nil {
-		logger.ConsoleLog(logger.ERROR, "SetBPFFilter Failed,", err.Error())
+		logger.ConsoleLog(logger.ERROR, fmt.Sprintf("SetBPFFilter Failed:", err.Error()))
 		return
 	}
 	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())

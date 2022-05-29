@@ -6,12 +6,8 @@ import (
 )
 
 type logType struct {
-	color      string
-	prefix     string
-	isProgress bool
-	row        int
-	colu       int
-	total      int
+	color  string
+	prefix string
 }
 
 const (
@@ -30,7 +26,7 @@ const (
 	ENDC         = "\033[0m"
 )
 
-func ConsoleLog(t logType, v ...interface{}) {
+func ConsoleLog(t logType, v string) {
 	logger := log.New(os.Stdout, "", 0)
 	logger.Print(t.color, t.prefix, v, ENDC)
 }

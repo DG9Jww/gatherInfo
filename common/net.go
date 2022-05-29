@@ -53,7 +53,7 @@ func ReadHttpBody(r *http.Response) []byte {
 		defer r.Body.Close()
 		content, err := io.ReadAll(r.Body)
 		if err != nil {
-			logger.ConsoleLog(logger.WARN, err)
+			logger.ConsoleLog(logger.WARN, err.Error())
 		}
 		return content
 	}
@@ -107,7 +107,7 @@ func AutoGetDevice() map[string]string {
 			go func(deviceName string) {
 				handle, err := pcap.OpenLive(deviceName, snapshot, promisc, timeout)
 				if err != nil {
-					logger.ConsoleLog(logger.ERROR, err)
+					logger.ConsoleLog(logger.ERROR, err.Error())
 				}
 				defer handle.Close()
 

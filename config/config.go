@@ -6,6 +6,8 @@ Author:DG9J
 package config
 
 import (
+	"fmt"
+
 	"github.com/DG9Jww/gatherInfo/common"
 	"github.com/DG9Jww/gatherInfo/logger"
 	"github.com/spf13/cobra"
@@ -198,6 +200,6 @@ func init() {
 	viper.AddConfigPath("config")
 	err := viper.ReadInConfig()
 	if err != nil {
-		logger.ConsoleLog(logger.ERROR, "Load config file error:", err)
+		logger.ConsoleLog(logger.ERROR, fmt.Sprintf("Load config file error:", err.Error()))
 	}
 }

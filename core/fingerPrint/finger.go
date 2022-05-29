@@ -33,7 +33,7 @@ func Run(cfg *config.FingerPrintConfig, isSubdomain bool, wg *sync.WaitGroup) {
 
 func (cli *client) Run(isSubdomain bool) {
 	if err := cli.loadFingerPrint(); err != nil {
-		logger.ConsoleLog(logger.ERROR, err)
+		logger.ConsoleLog(logger.ERROR, err.Error())
 		return
 	}
 

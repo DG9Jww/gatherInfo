@@ -1,11 +1,12 @@
 package logger
 
+import "fmt"
+
 var (
-	STATUS = logType{color: WHITE, prefix: "[STATUS]"}
-	INFO   = logType{color: LIGHT_BLUE, prefix: "[INFO]"}
-	WARN   = logType{color: LIGHT_YELLOW, prefix: "[WARN]"}
-	ERROR  = logType{color: LIGHT_RED, prefix: "[ERROR]"}
-	NORMAL = logType{color: WHITE, prefix: "[+]"}
+	INFO   = logType{color: LIGHT_BLUE, prefix: fmt.Sprintf("[%s%s%s]", BLUE, "INFO", ENDC)}
+	WARN   = logType{color: LIGHT_YELLOW, prefix: fmt.Sprintf("[%s%s%s]", YELLOW, "WARN", ENDC)}
+	ERROR  = logType{color: LIGHT_RED, prefix: fmt.Sprintf("[%s%s%s]", LIGHT_RED, "ERROR", ENDC)}
+	NORMAL = logType{color: WHITE, prefix: fmt.Sprintf("[%s%s%s]", WHITE, "+", ENDC)}
 
 	//dirscan
 	R30X = logType{color: LIGHT_YELLOW}

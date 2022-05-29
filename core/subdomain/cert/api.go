@@ -73,7 +73,7 @@ func (cli *Client) Run() error {
 		if !ok {
 			logger.ConsoleLog(logger.ERROR, "cert moudule ERROR:unknown error,please check your key")
 		} else {
-			logger.ConsoleLog(logger.ERROR, "cert moudule ERROR:", val)
+			logger.ConsoleLog(logger.ERROR, fmt.Sprintf("cert moudule ERROR:%s", val))
 		}
 		return nil
 	}

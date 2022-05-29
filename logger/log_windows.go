@@ -42,7 +42,7 @@ var (
 	CloseHandle *syscall.LazyProc = kernel32.NewProc(`CloseHandle`)
 )
 
-func ConsoleLog(t logType, v ...interface{}) {
+func ConsoleLog(t logType, v string) {
 	logger := log.New(os.Stdout, "", 0)
 	handle, _, _ := proc.Call(uintptr(syscall.Stdout), uintptr(t.color))
 	logger.Println(t.prefix, v)
