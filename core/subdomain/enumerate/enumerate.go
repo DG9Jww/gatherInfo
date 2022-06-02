@@ -2,7 +2,7 @@
 CopyRight 2022
 Author:DG9J
 */
-package brute
+package enumerate
 
 import (
 	"bufio"

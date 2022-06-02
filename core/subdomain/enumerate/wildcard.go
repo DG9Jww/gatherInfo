@@ -1,4 +1,4 @@
-package brute
+package enumerate
 
 import (
 	"time"
