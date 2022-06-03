@@ -37,5 +37,5 @@ integrate 'collect subdomain','directory scan','port scan',and 'fingerprint scan
 - 赶快学习context
 - 原子操作
 - 链表
-- 问题：怎么结束程序，肯定不能睡眠吧，想法：判断statusTableList是否为空？为空就结束程序（需要用到链表）
+- 问题：目前使用了双向循环链表优化，但是还有一些逻辑上的问题。1.验证泛解析和recvDNS冲突 2.重发会有Bug 3.还没解决程序结束问题
 

@@ -54,10 +54,12 @@ type bruter struct {
 	retryChan chan *statusTable
 
 	//record packets status
-	statusTabList []*statusTable
+	statusTabLinkList *tableLinkList
 
 	//for wildcard domain name
 	blackList []string
+
+	//
 }
 
 //interface information
@@ -66,25 +68,6 @@ type ethTable struct {
 	srcMAC  net.HardwareAddr
 	srcIP   net.IP
 	dstMAC  net.HardwareAddr
-}
-
-//status table
-type statusTable struct {
-	domain string
-
-	srcPort uint16
-
-	//sending packet time
-	time time.Time
-
-	//last resolver used
-	resolver string
-
-	//the amount of attempts
-	retry int8
-
-	//status,0 unsent,1 sent
-	status uint8
 }
 
 func newBruter(cfg *config.SubDomainConfig) *bruter {
@@ -100,6 +83,7 @@ func newBruter(cfg *config.SubDomainConfig) *bruter {
 
 	packetSize := int64(100) //the size of DNS packet is about 74
 	myRate := cfg.BandWidth / packetSize
+	myLinkList := initTabLinkList()
 
 	myHandle, _ = pcap.OpenLive(myEthTab.devName, snapshot, promisc, timeout)
 	b := &bruter{
@@ -107,17 +91,17 @@ func newBruter(cfg *config.SubDomainConfig) *bruter {
 		ethTab:    myEthTab,
 		resolvers: []string{"223.5.5.5", "223.6.6.6", "180.76.76.76", "119.29.29.29", "114.114.115.115"},
 		//resolvers: []string{"8.8.8.8", "1.0.0.1", "8.8.4.4", "1.1.1.1"},
-		handle:    myHandle,
-		srcPort:   40000,
-		rate:      myRate,
-		retryChan: make(chan *statusTable, myRate),
+		handle:            myHandle,
+		srcPort:           40000,
+		rate:              myRate,
+		retryChan:         make(chan *statusTable, myRate),
+		statusTabLinkList: myLinkList,
 	}
 	return b
 }
 
 func Run(cfg *config.SubDomainConfig) {
 	bruter := newBruter(cfg)
-
 	defer bruter.handle.Close()
 
 	//limit the rate according to the bandwith option
@@ -137,9 +121,7 @@ func Run(cfg *config.SubDomainConfig) {
 	//     ===== a goroutine for check timeout packet =====
 	//Throught continuous cycle detection,put the time out statusTable into retryChan
 	go func() {
-		for {
-			bruter.checkTimeout()
-		}
+		bruter.checkTimeout()
 	}()
 
 	//    	===== A goroutine for retry =====
@@ -223,7 +205,18 @@ func Run(cfg *config.SubDomainConfig) {
 			table.status = 1
 		}
 	}
-	time.Sleep(time.Second * 15)
+
+	//     ============ check ending ==============
+	var end = make(chan bool)
+	go func() {
+		for {
+			if bruter.statusTabLinkList.isEmpty() {
+				close(end)
+				return
+			}
+		}
+	}()
+	<-end
 }
 
 //Get Random Resolver
@@ -238,22 +231,30 @@ func getFlagID() uint16 {
 
 //record status on statusTable
 func (bru *bruter) recordStatus(domain, resolver string, srcPort uint16) *statusTable {
-	tab := statusTable{domain: domain, retry: 0, time: time.Now(), status: 0, resolver: resolver, srcPort: srcPort}
-	bru.statusTabList = append(bru.statusTabList, &tab)
-	return bru.statusTabList[len(bru.statusTabList)-1]
+	tab := &statusTable{domain: domain, retry: 0, time: time.Now(), status: 0, resolver: resolver, srcPort: srcPort}
+	bru.statusTabLinkList.append(tab)
+	return tab
 }
 
 //check the timeout item from statusTableChan
 //and channel the timeout item into retryChan
 func (bru *bruter) checkTimeout() {
-	// in case panic
-	if len(bru.statusTabList) == 0 {
-		return
-	}
-	for _, tab := range bru.statusTabList {
-		if time.Since(tab.time) > time.Second*5 && tab.retry < 2 && tab.status == 1 {
-			tab.status = 0
-			bru.retryChan <- tab
+	time.Sleep(time.Second * 10)
+	currentTab := bru.statusTabLinkList.head
+	for {
+		//invalid
+		if currentTab.retry >= 2 {
+			nextTab := currentTab.next
+			bru.statusTabLinkList.remove(currentTab)
+			currentTab = nextTab
+			continue
 		}
+
+		//retry
+		if time.Since(currentTab.time) > time.Second*5 && currentTab.retry < 2 && currentTab.status == 1 {
+			currentTab.status = 0
+			bru.retryChan <- currentTab
+		}
+		currentTab = currentTab.next
 	}
 }

@@ -145,7 +145,6 @@ func (bru *bruter) recvDNS(signal chan bool) {
 		//QR = 0 witch means it's a query packet
 		//QR = 1 witch means it's a response packet
 		if !dnsLayer.QR {
-			fmt.Println(dnsLayer.QR)
 			continue
 		}
 
@@ -171,10 +170,21 @@ func (bru *bruter) recvDNS(signal chan bool) {
 		if len(dnsLayer.Questions) == 0 {
 			continue
 		}
-		subdomain := string(dnsLayer.Questions[0].Name)
 		//answers
 		if dnsLayer.ANCount > 0 {
 			//query packet and delete packet
+			port := udpLayer.DstPort
+			subdomain := string(dnsLayer.Questions[0].Name)
+			//fmt.Println("subdomain:", subdomain, "port:", port)
+			tab, err := bru.statusTabLinkList.queryStatusTab(subdomain, uint16(port))
+			if err != nil {
+				if err == notFound {
+					bru.statusTabLinkList.printAllTables()
+					logger.ConsoleLog(logger.ERROR, err.Error())
+				}
+				continue
+			}
+			bru.statusTabLinkList.remove(tab)
 
 			tmpResult := RecvResults{subdomain: subdomain}
 			for _, record := range dnsLayer.Answers {
