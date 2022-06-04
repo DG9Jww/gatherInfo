@@ -37,5 +37,7 @@ integrate 'collect subdomain','directory scan','port scan',and 'fingerprint scan
 - 赶快学习context
 - 原子操作
 - 链表
-- 问题：目前使用了双向循环链表优化，但是还有一些逻辑上的问题。1.验证泛解析和recvDNS冲突 2.重发会有Bug 3.还没解决程序结束问题
+- 问题：目前使用了双向循环链表优化，但是还有一些逻辑上的问题。
+- .重发会有Bug .还没解决程序结束问题
+
 
