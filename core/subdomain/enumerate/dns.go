@@ -173,7 +173,6 @@ func (bru *bruter) recvDNS(signal chan bool) {
 		//answers
 		if dnsLayer.ANCount > 0 {
 			//query packet and delete packet
-			port := udpLayer.DstPort
 			subdomain := string(dnsLayer.Questions[0].Name)
 
 			tmpResult := RecvResults{subdomain: subdomain}
@@ -181,11 +180,12 @@ func (bru *bruter) recvDNS(signal chan bool) {
 				tmpResult.records = append(tmpResult.records, record.String())
 			}
 			bruteResults <- tmpResult
-			tab, err := bru.statusTabLinkList.queryStatusTab(subdomain, uint16(port))
+			tab, err := bru.statusTabLinkList.queryStatusTab(subdomain, dnsLayer.ID)
 			if err != nil {
 				if err == notFound {
-					bru.statusTabLinkList.printAllTables()
 					logger.ConsoleLog(logger.ERROR, err.Error())
+
+					logger.ConsoleLog(logger.CustomizeLog(logger.BLUE, ""), fmt.Sprintf("domain:%s  falgID:%d", subdomain, dnsLayer.ID))
 				}
 				continue
 			}

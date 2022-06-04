@@ -58,8 +58,6 @@ type bruter struct {
 
 	//for wildcard domain name
 	blackList []string
-
-	//
 }
 
 //interface information
@@ -137,10 +135,8 @@ func Run(cfg *config.SubDomainConfig) {
 				}
 				break
 			}
-			flagID := getFlagID()
 			l.Wait(ctx)
-			table.srcPort = bruter.srcPort
-			bruter.sendDNS(table.domain, resolver, flagID)
+			bruter.sendDNS(table.domain, resolver, table.flagID)
 			table.status = 1
 			table.retry++
 			table.time = time.Now()
@@ -157,7 +153,7 @@ func Run(cfg *config.SubDomainConfig) {
 			if cfg.WildCard {
 				logger.ConsoleLog2(logger.CustomizeLog(logger.YELLOW, "WARNING"), fmt.Sprintf("Detected Wildcard Domain: [%s]  BlackList: %v ", mainDomain, blackList))
 			} else {
-				logger.ConsoleLog2(logger.CustomizeLog(logger.YELLOW, "WARNING"), fmt.Sprintf("Detected Wildcard Domain: [%s]  BlackList: %v ,Skip!", mainDomain, blackList))
+				logger.ConsoleLog2(logger.CustomizeLog(logger.YELLOW, "WARNING"), fmt.Sprintf("Detected Wildcard Domain: [%s] ,Skip!", mainDomain))
 				//remove item because wildcard
 				bruter.domain = common.DeleteStringFromSlice(bruter.domain, index)
 				continue
@@ -200,7 +196,7 @@ func Run(cfg *config.SubDomainConfig) {
 			//limit rate
 			limiter.Wait(ctx)
 			//record status and send DNS packet
-			table := bruter.recordStatus(domain, resolver, bruter.srcPort)
+			table := bruter.recordStatus(domain, resolver, bruter.srcPort, flagID)
 			bruter.sendDNS(domain, resolver, flagID)
 			table.status = 1
 		}
@@ -230,8 +226,8 @@ func getFlagID() uint16 {
 }
 
 //record status on statusTable
-func (bru *bruter) recordStatus(domain, resolver string, srcPort uint16) *statusTable {
-	tab := &statusTable{domain: domain, retry: 0, time: time.Now(), status: 0, resolver: resolver, srcPort: srcPort}
+func (bru *bruter) recordStatus(domain, resolver string, srcPort uint16, flagID uint16) *statusTable {
+	tab := &statusTable{domain: domain, retry: 0, time: time.Now(), status: 0, resolver: resolver, flagID: flagID}
 	bru.statusTabLinkList.append(tab)
 	return tab
 }

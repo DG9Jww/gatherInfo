@@ -16,7 +16,7 @@ var (
 type statusTable struct {
 	domain string
 
-	srcPort uint16
+	flagID uint16
 
 	//sending packet time
 	time time.Time
@@ -60,11 +60,11 @@ func (link *tableLinkList) append(newTab *statusTable) {
 		return
 	}
 
-	link.tail.next = newTab
-	link.tail = newTab
 	newTab.pre = link.tail
 	newTab.next = link.head
+	link.tail.next = newTab
 	link.head.pre = newTab
+	link.tail = newTab
 	link.size++
 
 }
@@ -73,11 +73,20 @@ func (link *tableLinkList) append(newTab *statusTable) {
 func (link *tableLinkList) remove(tab *statusTable) {
 	link.lock.Lock()
 	defer link.lock.Unlock()
+	if link.isEmpty() {
+		return
+	}
+	//the last node
+	if link.head == link.head.pre {
+		link.tail = nil
+		link.head = nil
+		return
+	}
 	if tab == link.head {
-		link.head = link.head.next
+		link.head = tab.next
 	}
 	if tab == link.tail {
-		link.tail = link.tail.pre
+		link.tail = tab.pre
 	}
 	tab.pre.next = tab.next
 	tab.next.pre = tab.pre
@@ -86,13 +95,13 @@ func (link *tableLinkList) remove(tab *statusTable) {
 }
 
 //queryStatusTable according to subdomain name and port
-func (link *tableLinkList) queryStatusTab(subdomain string, port uint16) (*statusTable, error) {
+func (link *tableLinkList) queryStatusTab(subdomain string, flagID uint16) (*statusTable, error) {
 	if link.head == nil {
 		return nil, emptyLink
 	}
 	current := link.head
 	for {
-		if current.domain == subdomain && current.srcPort == port {
+		if current.domain == subdomain && current.flagID == flagID {
 			return current, nil
 		}
 		if current == link.tail {
@@ -103,6 +112,9 @@ func (link *tableLinkList) queryStatusTab(subdomain string, port uint16) (*statu
 }
 
 func (link *tableLinkList) printAllTables() {
+	if link.isEmpty() {
+		return
+	}
 	current := link.head
 	for {
 		fmt.Println("node:", *current)
