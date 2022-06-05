@@ -29,7 +29,9 @@ var (
 
 	//signal for starting sending DNS packets
 	sendingSignal = make(chan bool)
-	bruteResults  = make(chan RecvResults, 100)
+
+	bruteResults   = make(chan RecvResults, 100)
+	removedTabChan chan TabInfo
 )
 
 type bruter struct {
@@ -81,8 +83,8 @@ func newBruter(cfg *config.SubDomainConfig) *bruter {
 
 	packetSize := int64(100) //the size of DNS packet is about 74
 	myRate := cfg.BandWidth / packetSize
-	fmt.Printf("%d packet per seconds", myRate)
 	myLinkList := initTabLinkList()
+	removedTabChan = make(chan TabInfo, myRate)
 
 	myHandle, _ = pcap.OpenLive(myEthTab.devName, snapshot, promisc, timeout)
 	b := &bruter{
@@ -183,6 +185,18 @@ func Run(cfg *config.SubDomainConfig) {
 			}
 		}
 	}(cfg.WildCard)
+
+	//     ============ a goroutine for removing statusTable ==============
+	go func() {
+		for tabInfo := range removedTabChan {
+
+			tab, err := bruter.statusTabLinkList.queryStatusTab(tabInfo.subdomain, tabInfo.flagID)
+			if err != nil {
+				continue
+			}
+			bruter.statusTabLinkList.remove(tab)
+		}
+	}()
 
 	//     ============ sending packets ==============
 	if len(bruter.domain) == 0 {

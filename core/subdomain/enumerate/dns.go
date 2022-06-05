@@ -26,6 +26,11 @@ type RecvResults struct {
 	records   []string
 }
 
+type TabInfo struct {
+	subdomain string
+	flagID    uint16
+}
+
 //send DNS packet
 func (bru *bruter) sendDNS(domain string, resolverIP string, flagID uint16) {
 	dstIP := net.ParseIP(resolverIP)
@@ -180,11 +185,9 @@ func (bru *bruter) recvDNS(signal chan bool) {
 				tmpResult.records = append(tmpResult.records, record.String())
 			}
 			bruteResults <- tmpResult
-			tab, err := bru.statusTabLinkList.queryStatusTab(subdomain, dnsLayer.ID)
-			if err != nil {
-				continue
-			}
-			bru.statusTabLinkList.remove(tab)
+
+			tmpInfo := TabInfo{subdomain: subdomain, flagID: dnsLayer.ID}
+			removedTabChan <- tmpInfo
 		}
 
 	}
