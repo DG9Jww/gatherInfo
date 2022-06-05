@@ -81,6 +81,7 @@ func newBruter(cfg *config.SubDomainConfig) *bruter {
 
 	packetSize := int64(100) //the size of DNS packet is about 74
 	myRate := cfg.BandWidth / packetSize
+	fmt.Printf("%d packet per seconds", myRate)
 	myLinkList := initTabLinkList()
 
 	myHandle, _ = pcap.OpenLive(myEthTab.devName, snapshot, promisc, timeout)
@@ -107,7 +108,7 @@ func Run(cfg *config.SubDomainConfig) {
 	ctx := context.Background()
 
 	//load dictionary
-	file := common.LoadFile(cfg.BruteDict)
+	file := common.LoadFile("dict/" + cfg.BruteDict)
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 
