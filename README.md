@@ -38,6 +38,6 @@ integrate 'collect subdomain','directory scan','port scan',and 'fingerprint scan
 - 原子操作
 - 链表
 - 问题：目前使用了双向循环链表优化，基本完成
-- bug:有时候会查询不到表
+- bug:有时候会查询不到表(查询出错，或者删早le) 初步判断在checktimeout出错
 
 

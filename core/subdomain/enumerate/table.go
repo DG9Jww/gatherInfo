@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/DG9Jww/gatherInfo/logger"
 )
 
 var (
@@ -70,17 +72,26 @@ func (link *tableLinkList) append(newTab *statusTable) {
 }
 
 //remove statusTable
-func (link *tableLinkList) remove(tab *statusTable) {
+func (link *tableLinkList) remove(tab *statusTable) error {
 	link.lock.Lock()
 	defer link.lock.Unlock()
+	defer func() {
+		logger.ConsoleLog(logger.WARN, "after delete")
+		link.printAllTables()
+		fmt.Println()
+	}()
+	logger.ConsoleLog(logger.WARN, "before delete")
+	link.printAllTables()
 	if link.isEmpty() {
-		return
+		return emptyLink
 	}
 	//the last node
-	if link.head == link.head.pre {
+	if tab == tab.pre {
+		fmt.Println("last one:", tab)
 		link.tail = nil
 		link.head = nil
-		return
+		tab = nil
+		return nil
 	}
 	if tab == link.head {
 		link.head = tab.next
@@ -92,6 +103,7 @@ func (link *tableLinkList) remove(tab *statusTable) {
 	tab.next.pre = tab.pre
 	tab = nil
 	link.size--
+	return nil
 }
 
 //queryStatusTable according to subdomain name and port

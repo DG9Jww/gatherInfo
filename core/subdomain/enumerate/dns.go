@@ -183,8 +183,8 @@ func (bru *bruter) recvDNS(signal chan bool) {
 			tab, err := bru.statusTabLinkList.queryStatusTab(subdomain, dnsLayer.ID)
 			if err != nil {
 				if err == notFound {
+					bru.statusTabLinkList.printAllTables()
 					logger.ConsoleLog(logger.ERROR, err.Error())
-
 					logger.ConsoleLog(logger.CustomizeLog(logger.BLUE, ""), fmt.Sprintf("domain:%s  falgID:%d", subdomain, dnsLayer.ID))
 				}
 				continue

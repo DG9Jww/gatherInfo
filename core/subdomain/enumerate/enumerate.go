@@ -118,9 +118,10 @@ func Run(cfg *config.SubDomainConfig) {
 
 	//     ===== a goroutine for check timeout packet =====
 	//Throught continuous cycle detection,put the time out statusTable into retryChan
-	go func() {
-		bruter.checkTimeout()
-	}()
+	var end = make(chan bool)
+	go func(end chan bool) {
+		bruter.checkTimeout(end)
+	}(end)
 
 	//    	===== A goroutine for retry =====
 	//Trying to get statusTable from retryChan and
@@ -203,15 +204,6 @@ func Run(cfg *config.SubDomainConfig) {
 	}
 
 	//     ============ check ending ==============
-	var end = make(chan bool)
-	go func() {
-		for {
-			if bruter.statusTabLinkList.isEmpty() {
-				close(end)
-				return
-			}
-		}
-	}()
 	<-end
 }
 
@@ -234,14 +226,18 @@ func (bru *bruter) recordStatus(domain, resolver string, srcPort uint16, flagID 
 
 //check the timeout item from statusTableChan
 //and channel the timeout item into retryChan
-func (bru *bruter) checkTimeout() {
-	time.Sleep(time.Second * 10)
+func (bru *bruter) checkTimeout(end chan bool) {
+	time.Sleep(time.Second * 5)
 	currentTab := bru.statusTabLinkList.head
 	for {
 		//invalid
 		if currentTab.retry >= 2 {
 			nextTab := currentTab.next
-			bru.statusTabLinkList.remove(currentTab)
+			err := bru.statusTabLinkList.remove(currentTab)
+			if err == emptyLink {
+				close(end)
+				return
+			}
 			currentTab = nextTab
 			continue
 		}
