@@ -125,7 +125,7 @@ func SubDomainInit(cfg *SubDomainConfig) {
 		},
 	}
 	subDomainCmd.Flags().StringSliceVarP(&cfg.Domain, "domain", "d", nil, "Target Main Domain,such as 'google.com'")
-	subDomainCmd.Flags().Int64VarP(&cfg.BandWidth, "bandwith", "b", 100000, "BandWith,unit is byte")
+	subDomainCmd.Flags().Int64VarP(&cfg.BandWidth, "bandwith", "b", 30000, "BandWith,unit is byte. 30000 indicates about 300 packets / second")
 	subDomainCmd.Flags().StringVarP(&cfg.BruteDict, "dict", "p", "subdomain.txt", "Payload Dictionary Path For Brute")
 	subDomainCmd.Flags().BoolVarP(&cfg.WildCard, "wildcard", "w", false, "Scanning wildCard domain name,default is closed")
 	cfg.FofaKey = viper.GetString("subdomain.fofaKey")

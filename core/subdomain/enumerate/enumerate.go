@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sync/atomic"
 	"time"
 
 	"math/rand"
@@ -30,8 +31,13 @@ var (
 	//signal for starting sending DNS packets
 	sendingSignal = make(chan bool)
 
-	bruteResults   = make(chan RecvResults, 100)
+	bruteResults = make(chan RecvResults, 100)
+
+	//tables need being removed
 	removedTabChan chan TabInfo
+
+	//the number of total valid subdomain
+	total int32
 )
 
 type bruter struct {
@@ -149,7 +155,7 @@ func Run(cfg *config.SubDomainConfig) {
 
 	//       ============ detect wildcard domain name ===============
 	<-sendingSignal
-	logger.ConsoleLog2(logger.NORMAL, "Detecting WildCard Domain Name......")
+	logger.ConsoleLog(logger.NORMAL, "Detecting WildCard Domain Name......")
 	for index, mainDomain := range bruter.domain {
 		//determine whether the domain name is wildcard domain
 		ok, blackList := bruter.isWildCard(mainDomain)
@@ -182,6 +188,7 @@ func Run(cfg *config.SubDomainConfig) {
 			}
 			if printer != "" {
 				logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, res.subdomain), printer)
+				atomic.AddInt32(&total, 1)
 			}
 		}
 	}(cfg.WildCard)
@@ -218,8 +225,8 @@ func Run(cfg *config.SubDomainConfig) {
 		}
 	}
 
-	//     ============ check ending ==============
 	<-end
+	logger.ConsoleLog(logger.CustomizeLog(logger.GREEN, ""), fmt.Sprintf("===== %d Subdomain Found =====", total))
 }
 
 //Get Random Resolver
