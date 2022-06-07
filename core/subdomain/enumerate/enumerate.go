@@ -156,6 +156,7 @@ func Run(cfg *config.SubDomainConfig) {
 	//       ============ detect wildcard domain name ===============
 	<-sendingSignal
 	logger.ConsoleLog(logger.NORMAL, "Detecting WildCard Domain Name......")
+	var domainCounter int
 	for index, mainDomain := range bruter.domain {
 		//determine whether the domain name is wildcard domain
 		ok, blackList := bruter.isWildCard(mainDomain)
@@ -169,9 +170,13 @@ func Run(cfg *config.SubDomainConfig) {
 				continue
 			}
 		}
+		domainCounter++
+	}
+	if domainCounter == 0 {
+		return
 	}
 
-	//     ======== a goroutine for processing results
+	//     ======== a goroutine for processing results ========
 	go func(filterWildCard bool) {
 		for res := range bruteResults {
 			var printer string
@@ -186,6 +191,7 @@ func Run(cfg *config.SubDomainConfig) {
 					printer += " => " + record
 				}
 			}
+
 			if printer != "" {
 				logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, res.subdomain), printer)
 				atomic.AddInt32(&total, 1)
@@ -196,7 +202,6 @@ func Run(cfg *config.SubDomainConfig) {
 	//     ============ a goroutine for removing statusTable ==============
 	go func() {
 		for tabInfo := range removedTabChan {
-
 			tab, err := bruter.statusTabLinkList.queryStatusTab(tabInfo.subdomain, tabInfo.flagID)
 			if err != nil {
 				continue

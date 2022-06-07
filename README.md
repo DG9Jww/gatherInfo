@@ -1,11 +1,19 @@
 # gatherInfo
 
-integrate 'collect subdomain','directory scan','port scan',and 'fingerprint scan'
+功能如下：
+- [x] 子域名收集
+- [ ] 目录扫描
+- [ ] 端口扫描
+- [ ] 指纹识别
 
-子域名模块
+### 子域名模块
 
-- 子域名爆破，支持强制爆破泛解析域名，比较粗糙，搞个黑名单直接丢弃,不能只把A记录弄进黑名单，其他记录也要,因此要解析数据包
-- 状态表用以记录每个数据包的状态，超时则会重发，重发两次,尽可能解决丢包问题。由于每个数据包都会存在状态表,因此会牺牲内存，用内存换准确性。
+- 分为API查找(需填写部分平台的key)和子域名爆破
+- 支持强制爆破泛解析域名
+- 支持自定义带宽
+- 支持自定义字典
+- 支持验证域名是否存活
+
 - [ ] 备案号查询。先通过查询系统域名备案号，再通过备案号反查与备案号相关的域名 
 - http://www.beianbeian.com
 - http://icp.bugscaner.com
@@ -21,7 +29,8 @@ integrate 'collect subdomain','directory scan','port scan',and 'fingerprint scan
 - [ ] 自定义头部
 
 
-指纹识别
+### 指纹识别
+
 - [ ] 访问大量路径匹配特征
 - [ ] 根据响应内容匹配特征，不需要大量请求
 

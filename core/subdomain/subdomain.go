@@ -9,8 +9,9 @@ import (
 	"sync"
 
 	"github.com/DG9Jww/gatherInfo/config"
-	"github.com/DG9Jww/gatherInfo/core/subdomain/enumerate"
+	"github.com/DG9Jww/gatherInfo/core/subdomain/fofa"
 	"github.com/DG9Jww/gatherInfo/core/subdomain/results"
+	"github.com/DG9Jww/gatherInfo/logger"
 )
 
 var (
@@ -19,13 +20,12 @@ var (
 
 func Run(cfg *config.SubDomainConfig, isDir bool, wg *sync.WaitGroup) {
 	if cfg.Enabled {
-		//logger.ConsoleLog(logger.NORMAL, "Subdomain module is Running......")
-		////fofa
-		//err := fofa.NewClient(SubDomainRes, cfg.FofaKey, cfg.FofaEmail, cfg.Domain).GetAPIInfo()
-		//if err != nil {
-		//	logger.ConsoleLog(logger.ERROR, err.Error())
-		//	return
-		//}
+		//fofa
+		err := fofa.NewClient(SubDomainRes, cfg.FofaKey, cfg.FofaEmail, cfg.Domain).GetAPIInfo()
+		if err != nil {
+			logger.ConsoleLog(logger.ERROR, err.Error())
+			return
+		}
 
 		////cert
 		////	err = cert.NewClient(SubDomainRes, cfg.Domain, cfg.CensysID, cfg.CensysKey).Run()
@@ -40,7 +40,7 @@ func Run(cfg *config.SubDomainConfig, isDir bool, wg *sync.WaitGroup) {
 		//SubDomainRes.VerifyDomain(isDir)
 
 		//brute module
-		enumerate.Run(cfg)
+		//enumerate.Run(cfg)
 	}
 	wg.Done()
 }

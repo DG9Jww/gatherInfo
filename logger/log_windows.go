@@ -33,6 +33,7 @@ const (
 	LIGHT_PURPLE
 	LIGHT_YELLOW
 	WHITE
+	ENDC = 15
 )
 
 var (
