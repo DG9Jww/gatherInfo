@@ -6,6 +6,7 @@ Author:DG9J
 package subdomain
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/DG9Jww/gatherInfo/config"
@@ -20,6 +21,7 @@ var (
 
 func Run(cfg *config.SubDomainConfig, isDir bool, wg *sync.WaitGroup) {
 	if cfg.Enabled {
+		fmt.Println("\033[91mhahahaha")
 		//fofa
 		err := fofa.NewClient(SubDomainRes, cfg.FofaKey, cfg.FofaEmail, cfg.Domain).GetAPIInfo()
 		if err != nil {
@@ -36,8 +38,8 @@ func Run(cfg *config.SubDomainConfig, isDir bool, wg *sync.WaitGroup) {
 		////		return
 		////	}
 
-		//SubDomainRes.RemoveDuplicate()
-		//SubDomainRes.VerifyDomain(isDir)
+		SubDomainRes.RemoveDuplicate()
+		SubDomainRes.VerifyDomain(isDir)
 
 		//brute module
 		//enumerate.Run(cfg)

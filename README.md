@@ -42,6 +42,11 @@
 - [ ] 速度太快会报错
 - [ ] 发送包时候，缓冲区复用
 
+### 其他
+- cmd颜色不支持，请使用windows terminal (非常好用)
+
+
+
 ## NOTE
 - 赶快学习context
 - 原子操作
@@ -49,3 +54,4 @@
 ## Reference
 [ksubdomain](https://github.com/knownsec/ksubdomain)
 
+tcpdump -i eth0 -A -s 0 'tcp port 80 and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 0)'

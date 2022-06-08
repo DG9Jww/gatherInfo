@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/DG9Jww/gatherInfo/logger"
@@ -15,10 +14,10 @@ import (
 	"github.com/google/gopacket/pcap"
 )
 
-var proxy = func(*http.Request) (*url.URL, error) {
-	return url.Parse("https://127.0.0.1:8080")
-}
-var globalTransport = &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}, Proxy: proxy}
+//var proxy = func(*http.Request) (*url.URL, error) {
+//	return url.Parse("http://127.0.0.1:8080")
+//}
+var globalTransport = &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
 
 //redirect is forbidden
 func directPolicyFunc(req *http.Request, via []*http.Request) error {

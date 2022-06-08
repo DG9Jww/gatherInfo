@@ -25,6 +25,6 @@ var (
 	FINGERPRINT = logType{color: LIGHT_YELLOW}
 )
 
-func CustomizeLog(color int, prefix string) logType {
+func CustomizeLog(color string, prefix string) logType {
 	return logType{color: color, prefix: prefix}
 }
