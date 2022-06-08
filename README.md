@@ -50,8 +50,8 @@
 ## NOTE
 - 赶快学习context
 - 原子操作
+- some API in subdomain module got some problems and I wish completely rewrite API with which I can add new API quickly.Now it's suck!
 
 ## Reference
 [ksubdomain](https://github.com/knownsec/ksubdomain)
 
-tcpdump -i eth0 -A -s 0 'tcp port 80 and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 0)'

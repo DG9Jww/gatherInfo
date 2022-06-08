@@ -28,7 +28,7 @@ const (
 
 func ConsoleLog(t logType, v string) {
 	logger := log.New(os.Stdout, "", 0)
-	logger.Print(t.color, t.prefix, v, ENDC)
+	logger.Print(t.prefix, v, ENDC)
 }
 
 func LogToFile(file *os.File, v ...interface{}) {

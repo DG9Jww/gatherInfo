@@ -16,18 +16,16 @@ var (
 //client
 type Client struct {
 	*results.SubDomainResults
-	domain string
-	apiID  string
-	apiKey string
+	domains []string
+	apiID   string
+	apiKey  string
 }
 
-func NewClient(r *results.SubDomainResults, d string, id string, k string) *Client {
+func NewClient(r *results.SubDomainResults, d []string, id string, k string) *Client {
 	return &Client{
 		SubDomainResults: r,
-		domain: d,
-		apiID:  id,
-		apiKey: k,
+		domains:          d,
+		apiID:            id,
+		apiKey:           k,
 	}
 }
-
-
