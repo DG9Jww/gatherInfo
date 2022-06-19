@@ -252,12 +252,15 @@ func (bru *bruter) recordStatus(domain, resolver string, srcPort uint16, flagID 
 }
 
 //check the timeout item from statusTableChan
-//and channel the timeout item into retryChan
+//and put the timeout item into retryChan
 func (bru *bruter) checkTimeout(end chan bool) {
-	time.Sleep(time.Second * 5)
 	currentTab := bru.statusTabLinkList.head
 	for {
 		//invalid
+		if currentTab == nil {
+			currentTab = bru.statusTabLinkList.head
+			continue
+		}
 		if currentTab.retry >= 2 {
 			nextTab := currentTab.next
 			err := bru.statusTabLinkList.remove(currentTab)

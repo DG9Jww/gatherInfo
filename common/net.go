@@ -41,6 +41,8 @@ func HttpRequest(req *http.Request) (*http.Response, error) {
 	return resp, nil
 }
 
+//new http request with random UA.
+//If you don't need body payload,let body == nil
 func NewRequest(method string, url string, body io.Reader) (*http.Request, error) {
 	r, err := http.NewRequest(method, url, body)
 	if err != nil {

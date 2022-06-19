@@ -42,9 +42,20 @@ func MatchInt(i int, list []int) bool {
 	return false
 }
 
+//iterate the slice and check whether the slice item equal "str"
 func IsStringInSlice(str string, list []string) bool {
 	for _, item := range list {
 		if item == str {
+			return true
+		}
+	}
+	return false
+}
+
+//iterate the slice and check whether item within str
+func IsSliceWithinStr(str string, list []string) bool {
+	for _, item := range list {
+		if strings.Contains(str, item) {
 			return true
 		}
 	}

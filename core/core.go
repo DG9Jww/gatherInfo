@@ -2,7 +2,6 @@
 CopyRight 2022
 Author:DG9J
 */
-
 package core
 
 import (
@@ -33,7 +32,6 @@ func Execute() {
 	//logger initializing
 	//num := calcuEnabled(cfg)
 	//logger.LoggerInit(num)
-
 	//Run Modules
 	var wg sync.WaitGroup
 	wg.Add(4)

@@ -51,7 +51,8 @@
 - 赶快学习context
 - 原子操作
 - some API in subdomain module got some problems and I wish completely rewrite API with which I can add new API quickly.Now it's suck!
+- 大问题，会打印出无关的域名，应该是recvDNS出了问题。很奇怪，我明明做了过滤。
 
 ## Reference
-[ksubdomain](https://github.com/knownsec/ksubdomain)
+- [ksubdomain](https://github.com/knownsec/ksubdomain)
 

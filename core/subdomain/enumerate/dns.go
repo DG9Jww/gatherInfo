@@ -101,7 +101,7 @@ func (bru *bruter) recvDNS(signal chan bool) {
 	defer handle.Close()
 	err := handle.SetBPFFilter("udp and src port 53")
 	if err != nil {
-		logger.ConsoleLog(logger.ERROR, fmt.Sprintf("SetBPFFilter Failed:", err.Error()))
+		logger.ConsoleLog(logger.ERROR, fmt.Sprintf("SetBPFFilter Failed:%s", err.Error()))
 		return
 	}
 	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
@@ -147,20 +147,27 @@ func (bru *bruter) recvDNS(signal chan bool) {
 			continue
 		}
 
-		//QR = 0 witch means it's a query packet
-		//QR = 1 witch means it's a response packet
+		//QR = 0 witch means it's a query packet QR = 1 witch means it's a response packet
 		if !dnsLayer.QR {
 			continue
 		}
 
-		//Throught verifying packet type and IP address,
-		//we can confirm that it is the packet what we need
+		//Throught verifying packet type and IP address, we can confirm that it is the packet what we need
 		if !common.IsStringInSlice(ipv4Layer.SrcIP.String(), bru.resolvers) {
 			continue
 		}
 
-		//Reply code equal 0 means no error.
-		//Besides,most of time,it will be set to 3 which means the subdomain doesn't exist.
+		//invalid
+		if len(dnsLayer.Questions) == 0 {
+			continue
+		}
+
+		subdomain := string(dnsLayer.Questions[0].Name)
+		if !common.IsSliceWithinStr(subdomain, bru.domain) {
+			continue
+		}
+
+		//Reply code equal 0 means no error. Besides,most of time,it will be set to 3 which means the subdomain doesn't exist.
 		if dnsLayer.ResponseCode != 0 {
 			continue
 		}
@@ -170,18 +177,13 @@ func (bru *bruter) recvDNS(signal chan bool) {
 			continue
 		}
 
-		//now we get the packet what we want
-		//invalid
-		if len(dnsLayer.Questions) == 0 {
-			continue
-		}
 		//answers
 		if dnsLayer.ANCount > 0 {
 			//query packet and delete packet
-			subdomain := string(dnsLayer.Questions[0].Name)
 
 			tmpResult := RecvResults{subdomain: subdomain}
 			for _, record := range dnsLayer.Answers {
+				fmt.Println(subdomain, ipv4Layer.SrcIP.String())
 				tmpResult.records = append(tmpResult.records, record.String())
 			}
 			bruteResults <- tmpResult
