@@ -39,6 +39,7 @@ type SubDomainConfig struct {
 	FofaEmail string
 	BandWidth int64
 	WildCard  bool
+	Validate  bool
 	CensysID  string
 	CensysKey string
 	BruteDict string
@@ -128,6 +129,7 @@ func SubDomainInit(cfg *SubDomainConfig) {
 	subDomainCmd.Flags().Int64VarP(&cfg.BandWidth, "bandwith", "b", 30000, "BandWith,unit is byte. 30000 indicates about 300 packets / second")
 	subDomainCmd.Flags().StringVarP(&cfg.BruteDict, "dict", "p", "subdomain.txt", "Payload Dictionary Path For Brute")
 	subDomainCmd.Flags().BoolVarP(&cfg.WildCard, "wildcard", "w", false, "Scanning wildCard domain name,default is closed")
+	subDomainCmd.Flags().BoolVarP(&cfg.Validate, "validate", "v", false, "Validating the subdomains whether they live")
 	cfg.FofaKey = viper.GetString("subdomain.fofaKey")
 	cfg.FofaEmail = viper.GetString("subdomain.fofaEmail")
 	cfg.CensysID = viper.GetString("subdomain.censysID")

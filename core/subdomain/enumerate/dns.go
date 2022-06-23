@@ -96,7 +96,7 @@ func (bru *bruter) sendDNS(domain string, resolverIP string, flagID uint16) {
 }
 
 //receive dns packets
-func (bru *bruter) recvDNS(signal chan bool) {
+func (bru *bruter) recvDNS(signal chan bool, endSignal chan bool) {
 	handle, _ := pcap.OpenLive(myEthTab.devName, snapshot, promisc, pcap.BlockForever)
 	defer handle.Close()
 	err := handle.SetBPFFilter("udp and src port 53")
@@ -118,79 +118,85 @@ func (bru *bruter) recvDNS(signal chan bool) {
 	//recv goroutine is ready
 	close(signal)
 	for {
+		select {
+		case <-endSignal:
+			close(bruteResults)
+			close(removedTabChan)
+			close(bru.retryChan)
+			return
+		default:
 
-		/*
-			5.19
-			Here I got some issues.
-			When the network environment is pure,the program was always stuck here
-			because here is no more packet and this function can not read any packet.
+			/*
+				5.19
+				Here I got some issues.
+				When the network environment is pure,the program was always stuck here
+				because here is no more packet and this function can not read any packet.
 
-			How to solve this issues?
-			I set the parameter "timeout" to 1 millisecond and use NextPacket to read packet.
-			"packetChan := packetSource.Packet()" is doesn't work
+				How to solve this issues?
+				I set the parameter "timeout" to 1 millisecond and use NextPacket to read packet.
+				"packetChan := packetSource.Packet()" is doesn't work
 
-			10 mins later......
-			Well,I found I didn't get the point.
-			The point is that the goroutine for receiving DNS packet is inefficient.
-			When my machine receives all DNS response packets,the recvDNS goroutine is only starting.
-			So I try to make a trigger before sending packet.When recv goroutine is ready,sending
-			packets goroutine start.
-		*/
-		packet, err := packetSource.NextPacket()
-		if err != nil {
-			continue
-		}
-
-		//trying to parse packet into DNS packet
-		err = parser.DecodeLayers(packet.Data(), &decodedLayers)
-		if err != nil {
-			continue
-		}
-
-		//QR = 0 witch means it's a query packet QR = 1 witch means it's a response packet
-		if !dnsLayer.QR {
-			continue
-		}
-
-		//Throught verifying packet type and IP address, we can confirm that it is the packet what we need
-		if !common.IsStringInSlice(ipv4Layer.SrcIP.String(), bru.resolvers) {
-			continue
-		}
-
-		//invalid
-		if len(dnsLayer.Questions) == 0 {
-			continue
-		}
-
-		subdomain := string(dnsLayer.Questions[0].Name)
-		if !common.IsSliceWithinStr(subdomain, bru.domain) {
-			continue
-		}
-
-		//Reply code equal 0 means no error. Besides,most of time,it will be set to 3 which means the subdomain doesn't exist.
-		if dnsLayer.ResponseCode != 0 {
-			continue
-		}
-
-		//no answer
-		if dnsLayer.ANCount == 0 && dnsLayer.ARCount == 0 && dnsLayer.NSCount == 0 {
-			continue
-		}
-
-		//answers
-		if dnsLayer.ANCount > 0 {
-			//query packet and delete packet
-
-			tmpResult := RecvResults{subdomain: subdomain}
-			for _, record := range dnsLayer.Answers {
-				fmt.Println(subdomain, ipv4Layer.SrcIP.String())
-				tmpResult.records = append(tmpResult.records, record.String())
+				10 mins later......
+				Well,I found I didn't get the point.
+				The point is that the goroutine for receiving DNS packet is inefficient.
+				When my machine receives all DNS response packets,the recvDNS goroutine is only starting.
+				So I try to make a trigger before sending packet.When recv goroutine is ready,sending
+				packets goroutine start.
+			*/
+			packet, err := packetSource.NextPacket()
+			if err != nil {
+				continue
 			}
-			bruteResults <- tmpResult
 
-			tmpInfo := TabInfo{subdomain: subdomain, flagID: dnsLayer.ID}
-			removedTabChan <- tmpInfo
+			//trying to parse packet into DNS packet
+			err = parser.DecodeLayers(packet.Data(), &decodedLayers)
+			if err != nil {
+				continue
+			}
+
+			//QR = 0 witch means it's a query packet QR = 1 witch means it's a response packet
+			if !dnsLayer.QR {
+				continue
+			}
+
+			//Throught verifying packet type and IP address, we can confirm that it is the packet what we need
+			if !common.IsStringInSlice(ipv4Layer.SrcIP.String(), bru.resolvers) {
+				continue
+			}
+
+			//invalid
+			if len(dnsLayer.Questions) == 0 {
+				continue
+			}
+
+			subdomain := string(dnsLayer.Questions[0].Name)
+			if !common.IsSliceWithinStr(subdomain, bru.domain) {
+				continue
+			}
+
+			//Reply code equal 0 means no error. Besides,most of time,it will be set to 3 which means the subdomain doesn't exist.
+			if dnsLayer.ResponseCode != 0 {
+				continue
+			}
+
+			//no answer
+			if dnsLayer.ANCount == 0 && dnsLayer.ARCount == 0 && dnsLayer.NSCount == 0 {
+				continue
+			}
+
+			//answers
+			if dnsLayer.ANCount > 0 {
+				//query packet and delete packet
+				tmpResult := RecvResults{subdomain: subdomain}
+				for _, record := range dnsLayer.Answers {
+					tmpResult.records = append(tmpResult.records, record.String())
+				}
+				bruteResults <- tmpResult
+
+				tmpInfo := TabInfo{subdomain: subdomain, flagID: dnsLayer.ID}
+				removedTabChan <- tmpInfo
+			}
+
 		}
-
 	}
 }

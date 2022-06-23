@@ -3,13 +3,13 @@ package logger
 import "fmt"
 
 var (
-	INFO   = logType{color: LIGHT_BLUE, prefix: fmt.Sprintf("[%s%s%s]", BLUE, "INFO", ENDC)}
-	WARN   = logType{color: LIGHT_YELLOW, prefix: fmt.Sprintf("[%s%s%s]", YELLOW, "WARN", ENDC)}
-	ERROR  = logType{color: LIGHT_RED, prefix: fmt.Sprintf("[%s%s%s]", LIGHT_RED, "ERROR", ENDC)}
-	NORMAL = logType{color: WHITE, prefix: fmt.Sprintf("[%s%s%s]", WHITE, "+", ENDC)}
+	INFO   = logType{prefix: fmt.Sprintf("[%s%s%s]", BLUE, "INFO", ENDC)}
+	WARN   = logType{prefix: fmt.Sprintf("[%s%s%s]", YELLOW, "WARN", ENDC)}
+	ERROR  = logType{prefix: fmt.Sprintf("[%s%s%s]", LIGHT_RED, "ERROR", ENDC)}
+	NORMAL = logType{prefix: fmt.Sprintf("[%s%s%s]", WHITE, "+", ENDC)}
 
 	//dirscan
-	R30X = logType{color: LIGHT_YELLOW}
+	R30X = logType{color: LIGHT_YELLOW,}
 	R20X = logType{color: BLUE}
 	R40X = logType{color: LIGHT_RED}
 	R50X = logType{color: PURPLE}

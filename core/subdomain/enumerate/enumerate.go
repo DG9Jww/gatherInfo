@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -38,6 +39,9 @@ var (
 
 	//the number of total valid subdomain
 	total int32
+
+	//for validating
+	validateChan chan string
 )
 
 type bruter struct {
@@ -91,6 +95,9 @@ func newBruter(cfg *config.SubDomainConfig) *bruter {
 	myRate := cfg.BandWidth / packetSize
 	myLinkList := initTabLinkList()
 	removedTabChan = make(chan TabInfo, myRate)
+	if cfg.Validate {
+		validateChan = make(chan string, 10)
+	}
 
 	myHandle, _ = pcap.OpenLive(myEthTab.devName, snapshot, promisc, timeout)
 	b := &bruter{
@@ -119,15 +126,15 @@ func Run(cfg *config.SubDomainConfig) {
 	file := common.LoadFile("dict/" + cfg.BruteDict)
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
+	var end = make(chan bool)
 
 	//     ===== a goroutine for receiving DNS packet =====
 	go func(chan bool) {
-		bruter.recvDNS(sendingSignal)
+		bruter.recvDNS(sendingSignal, end)
 	}(sendingSignal)
 
 	//     ===== a goroutine for check timeout packet =====
 	//Throught continuous cycle detection,put the time out statusTable into retryChan
-	var end = make(chan bool)
 	go func(end chan bool) {
 		bruter.checkTimeout(end)
 	}(end)
@@ -177,7 +184,7 @@ func Run(cfg *config.SubDomainConfig) {
 	}
 
 	//     ======== a goroutine for processing results ========
-	go func(filterWildCard bool) {
+	go func(filterWildCard bool, val bool) {
 		for res := range bruteResults {
 			var printer string
 			for _, record := range res.records {
@@ -194,10 +201,14 @@ func Run(cfg *config.SubDomainConfig) {
 
 			if printer != "" {
 				logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, res.subdomain), printer)
+				if val {
+					validateChan <- res.subdomain
+				}
 				atomic.AddInt32(&total, 1)
 			}
 		}
-	}(cfg.WildCard)
+		close(validateChan)
+	}(cfg.WildCard, cfg.Validate)
 
 	//     ============ a goroutine for removing statusTable ==============
 	go func() {
@@ -232,6 +243,20 @@ func Run(cfg *config.SubDomainConfig) {
 
 	<-end
 	logger.ConsoleLog(logger.CustomizeLog(logger.GREEN, ""), fmt.Sprintf("===== %d Subdomain Found =====", total))
+
+	//If enable validate
+    time.Sleep(10)
+	if cfg.Validate {
+		logger.ConsoleLog(logger.INFO, "Starting validating subdomains......")
+        pool := common.NewPool(20)
+        var wg sync.WaitGroup
+        defer pool.Release()
+		for subdomain := range validateChan {
+            pool.Submit(isLive(subdomain,&wg))
+            wg.Add(1)
+		}
+        wg.Wait()
+	}
 }
 
 //Get Random Resolver
@@ -256,14 +281,17 @@ func (bru *bruter) recordStatus(domain, resolver string, srcPort uint16, flagID 
 func (bru *bruter) checkTimeout(end chan bool) {
 	currentTab := bru.statusTabLinkList.head
 	for {
+
 		//invalid
 		if currentTab == nil {
 			currentTab = bru.statusTabLinkList.head
 			continue
 		}
+
 		if currentTab.retry >= 2 {
 			nextTab := currentTab.next
 			err := bru.statusTabLinkList.remove(currentTab)
+			//if err equal emptyLink which means the task was finished
 			if err == emptyLink {
 				close(end)
 				return
