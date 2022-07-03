@@ -13,14 +13,14 @@ func isLive(subdomain string, wg *sync.WaitGroup) func() {
 	return func() {
 		defer wg.Done()
 		url := fmt.Sprintf("https://%s", subdomain)
-		req, err := common.NewRequest("HEAD", url, nil)
+		req, err := common.NewRequest("GET", url, nil)
 		if err != nil {
 			return
 		}
 		resp, err := common.HttpRequest(req)
 		if err != nil {
 			url2 := fmt.Sprintf("http://%s", subdomain)
-			req2, err := common.NewRequest("HEAD", url2, nil)
+			req2, err := common.NewRequest("GET", url2, nil)
 			if err != nil {
 				return
 			}

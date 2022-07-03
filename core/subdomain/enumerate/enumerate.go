@@ -41,7 +41,7 @@ var (
 	total int32
 
 	//for validating
-	validateChan chan string
+	validateList []string
 )
 
 type bruter struct {
@@ -95,9 +95,6 @@ func newBruter(cfg *config.SubDomainConfig) *bruter {
 	myRate := cfg.BandWidth / packetSize
 	myLinkList := initTabLinkList()
 	removedTabChan = make(chan TabInfo, myRate)
-	if cfg.Validate {
-		validateChan = make(chan string, 10)
-	}
 
 	myHandle, _ = pcap.OpenLive(myEthTab.devName, snapshot, promisc, timeout)
 	b := &bruter{
@@ -202,13 +199,13 @@ func Run(cfg *config.SubDomainConfig) {
 			if printer != "" {
 				logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, res.subdomain), printer)
 				if val {
-					validateChan <- res.subdomain
+					validateList = append(validateList, res.subdomain)
 				}
 				atomic.AddInt32(&total, 1)
 			}
 		}
-		close(validateChan)
 	}(cfg.WildCard, cfg.Validate)
+
 
 	//     ============ a goroutine for removing statusTable ==============
 	go func() {
@@ -251,7 +248,7 @@ func Run(cfg *config.SubDomainConfig) {
         pool := common.NewPool(20)
         var wg sync.WaitGroup
         defer pool.Release()
-		for subdomain := range validateChan {
+		for _,subdomain := range validateList {
             pool.Submit(isLive(subdomain,&wg))
             wg.Add(1)
 		}

@@ -164,16 +164,6 @@ func (bru *bruter) recvDNS(signal chan bool, endSignal chan bool) {
 				continue
 			}
 
-			//invalid
-			if len(dnsLayer.Questions) == 0 {
-				continue
-			}
-
-			subdomain := string(dnsLayer.Questions[0].Name)
-			if !common.IsSliceWithinStr(subdomain, bru.domain) {
-				continue
-			}
-
 			//Reply code equal 0 means no error. Besides,most of time,it will be set to 3 which means the subdomain doesn't exist.
 			if dnsLayer.ResponseCode != 0 {
 				continue
@@ -181,6 +171,16 @@ func (bru *bruter) recvDNS(signal chan bool, endSignal chan bool) {
 
 			//no answer
 			if dnsLayer.ANCount == 0 && dnsLayer.ARCount == 0 && dnsLayer.NSCount == 0 {
+				continue
+			}
+
+			//invalid
+			if len(dnsLayer.Questions) == 0 {
+				continue
+			}
+
+			subdomain := string(dnsLayer.Questions[0].Name)
+			if !common.IsSliceWithinStr(subdomain, bru.domain) {
 				continue
 			}
 
