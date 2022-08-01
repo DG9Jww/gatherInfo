@@ -123,18 +123,21 @@ func Run(cfg *config.SubDomainConfig) {
 	file := common.LoadFile("dict/" + cfg.BruteDict)
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
-	var end = make(chan bool)
+
+    rootCtx,rootFunc := context.WithCancel(context.Background())
+    recvDNSCtx,recvDNSFunc := context.WithCancel(rootCtx)
+    defer rootFunc()
 
 	//     ===== a goroutine for receiving DNS packet =====
-	go func(chan bool) {
-		bruter.recvDNS(sendingSignal, end)
-	}(sendingSignal)
+	go bruter.recvDNS(sendingSignal, recvDNSCtx)
+		
+
 
 	//     ===== a goroutine for check timeout packet =====
 	//Throught continuous cycle detection,put the time out statusTable into retryChan
-	go func(end chan bool) {
-		bruter.checkTimeout(end)
-	}(end)
+	go func(cancel context.CancelFunc) {
+		bruter.checkTimeout(cancel)
+	}(recvDNSFunc)
 
 	//    	===== A goroutine for retry =====
 	//Trying to get statusTable from retryChan and
@@ -155,6 +158,7 @@ func Run(cfg *config.SubDomainConfig) {
 			table.retry++
 			table.time = time.Now()
 		}
+        return
 	}(limiter)
 
 	//       ============ detect wildcard domain name ===============
@@ -204,6 +208,7 @@ func Run(cfg *config.SubDomainConfig) {
 				atomic.AddInt32(&total, 1)
 			}
 		}
+        return
 	}(cfg.WildCard, cfg.Validate)
 
 
@@ -216,6 +221,7 @@ func Run(cfg *config.SubDomainConfig) {
 			}
 			bruter.statusTabLinkList.remove(tab)
 		}
+        return
 	}()
 
 	//     ============ sending packets ==============
@@ -238,7 +244,9 @@ func Run(cfg *config.SubDomainConfig) {
 		}
 	}
 
-	<-end
+
+    <- recvDNSCtx.Done()
+	//<-recvDone
 	logger.ConsoleLog(logger.CustomizeLog(logger.GREEN, ""), fmt.Sprintf("===== %d Subdomain Found =====", total))
 
 	//If enable validate
@@ -275,7 +283,7 @@ func (bru *bruter) recordStatus(domain, resolver string, srcPort uint16, flagID 
 
 //check the timeout item from statusTableChan
 //and put the timeout item into retryChan
-func (bru *bruter) checkTimeout(end chan bool) {
+func (bru *bruter) checkTimeout(cancel context.CancelFunc) {
 	currentTab := bru.statusTabLinkList.head
 	for {
 
@@ -290,7 +298,8 @@ func (bru *bruter) checkTimeout(end chan bool) {
 			err := bru.statusTabLinkList.remove(currentTab)
 			//if err equal emptyLink which means the task was finished
 			if err == emptyLink {
-				close(end)
+                //cancel recvDNS goroutine 
+				cancel()
 				return
 			}
 			currentTab = nextTab

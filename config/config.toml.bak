@@ -1,12 +1,12 @@
 [subdomain]
 enabled = true
-domain = "xx.com"
+domain = ""
 
-fofaKey = "xxxxxxxxxx"
-fofaEmail ="xxxxxxxxxx"
+fofaKey = "xxxxx"
+fofaEmail ="xxxxx"
 
-censysKey = "xxxxxxxxxx"
-censysID = "xxxxxxxxxx"
+censysKey = "xxxxx"
+censysID = "xxxxx"
     
 [portscan]
 Enabled = false
