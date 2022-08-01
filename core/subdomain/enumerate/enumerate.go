@@ -123,21 +123,18 @@ func Run(cfg *config.SubDomainConfig) {
 	file := common.LoadFile("dict/" + cfg.BruteDict)
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
+    var recvEndSignal = make(chan struct{})
 
-    rootCtx,rootFunc := context.WithCancel(context.Background())
-    recvDNSCtx,recvDNSFunc := context.WithCancel(rootCtx)
-    defer rootFunc()
 
 	//     ===== a goroutine for receiving DNS packet =====
-	go bruter.recvDNS(sendingSignal, recvDNSCtx)
+	go bruter.recvDNS(sendingSignal, recvEndSignal)
 		
 
 
 	//     ===== a goroutine for check timeout packet =====
 	//Throught continuous cycle detection,put the time out statusTable into retryChan
-	go func(cancel context.CancelFunc) {
-		bruter.checkTimeout(cancel)
-	}(recvDNSFunc)
+	
+	go bruter.checkTimeout(recvEndSignal)
 
 	//    	===== A goroutine for retry =====
 	//Trying to get statusTable from retryChan and
@@ -244,8 +241,7 @@ func Run(cfg *config.SubDomainConfig) {
 		}
 	}
 
-
-    <- recvDNSCtx.Done()
+    <- recvEndSignal
 	//<-recvDone
 	logger.ConsoleLog(logger.CustomizeLog(logger.GREEN, ""), fmt.Sprintf("===== %d Subdomain Found =====", total))
 
@@ -283,7 +279,7 @@ func (bru *bruter) recordStatus(domain, resolver string, srcPort uint16, flagID 
 
 //check the timeout item from statusTableChan
 //and put the timeout item into retryChan
-func (bru *bruter) checkTimeout(cancel context.CancelFunc) {
+func (bru *bruter) checkTimeout(recvEndSignal chan struct{}) {
 	currentTab := bru.statusTabLinkList.head
 	for {
 
@@ -298,8 +294,7 @@ func (bru *bruter) checkTimeout(cancel context.CancelFunc) {
 			err := bru.statusTabLinkList.remove(currentTab)
 			//if err equal emptyLink which means the task was finished
 			if err == emptyLink {
-                //cancel recvDNS goroutine 
-				cancel()
+                close(recvEndSignal)
 				return
 			}
 			currentTab = nextTab

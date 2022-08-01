@@ -1,7 +1,6 @@
 package enumerate
 
 import (
-	"context"
 	"fmt"
 	"math/rand"
 	"net"
@@ -97,7 +96,7 @@ func (bru *bruter) sendDNS(domain string, resolverIP string, flagID uint16) {
 }
 
 //receive dns packets
-func (bru *bruter) recvDNS(signal chan bool, ctx context.Context) {
+func (bru *bruter) recvDNS(signal chan bool, recvEndSignal chan struct{}) {
 	handle, _ := pcap.OpenLive(myEthTab.devName, snapshot, promisc, pcap.BlockForever)
 	defer handle.Close()
 	err := handle.SetBPFFilter("udp and src port 53")
@@ -120,7 +119,7 @@ func (bru *bruter) recvDNS(signal chan bool, ctx context.Context) {
 	close(signal)
 	for {
 		select {
-		case <-ctx.Done():
+		case <- recvEndSignal:
 			close(bruteResults)
 			close(removedTabChan)
 			close(bru.retryChan)
