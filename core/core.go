@@ -25,8 +25,9 @@ func Execute() {
 		config.Mode = 1
 	} else if len(os.Args) > 1 {
 		//command mode
+		module := os.Args[1]
 		logger.ConsoleLog(logger.NORMAL, "Using Command Mode")
-		cfg = config.ConfigCommandInit()
+		cfg = config.ConfigCommandInit(module)
 		config.Mode = 0
 	}
 	//logger initializing

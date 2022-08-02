@@ -88,12 +88,20 @@ func ConfigFileInit() *MyConfig {
 }
 
 //command mode config initialize
-func ConfigCommandInit() *MyConfig {
+func ConfigCommandInit(module string) *MyConfig {
 	cfg := new(MyConfig)
-	SubDomainInit(&cfg.SubDomain)
-	DirScanInit(&cfg.DirScan)
-	PortScanInit(&cfg.PortScan)
-	FingerPrintInit(&cfg.FingerPrint)
+	switch module {
+	case "subdomain":
+		SubDomainInit(&cfg.SubDomain)
+	case "dirscan":
+		DirScanInit(&cfg.DirScan)
+	case "portscan":
+		PortScanInit(&cfg.PortScan)
+	case "fingerprint":
+		FingerPrintInit(&cfg.FingerPrint)
+	case "vulscan":
+		VulScanInit(&cfg.VulScan)
+	}
 
 	rootCmd.Run = func(cmd *cobra.Command, args []string) {
 		for _, arg := range args {

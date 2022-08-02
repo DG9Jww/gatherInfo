@@ -37,6 +37,7 @@ func LogToFile(file *os.File, v ...interface{}) {
 	logger.Print(v...)
 }
 
+//start with "[]"
 func ConsoleLog2(t logType, v string) {
 	logger := log.New(os.Stdout, "", 0)
 	logger.Printf("[%s%s%s] %s", t.color, t.prefix, ENDC, v)
@@ -47,9 +48,9 @@ func StatusCodeLog(code int, url string) {
 	var t logType
 	switch ok {
 	case code >= 200 && code < 300:
-		t = CustomizeLog(WHITE, fmt.Sprintf("[+]%s%d%s  ", GREEN, code, ENDC))
+		t = CustomizeLog(WHITE, fmt.Sprintf("[+]%s%d%s  ", LIGHT_GREEN, code, ENDC))
 	case code >= 300 && code < 400:
-		t = CustomizeLog(WHITE, fmt.Sprintf("[+]%s%d%s  ", YELLOW, code, ENDC))
+		t = CustomizeLog(WHITE, fmt.Sprintf("[+]%s%d%s  ", LIGHT_YELLOW, code, ENDC))
 	case code >= 400 && code < 500:
 		t = CustomizeLog(WHITE, fmt.Sprintf("[+]%s%d%s  ", RED, code, ENDC))
 	case code >= 500:
