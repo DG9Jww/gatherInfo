@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/DG9Jww/gatherInfo/config"
-	"github.com/DG9Jww/gatherInfo/core/subdomain/enumerate"
+	"github.com/DG9Jww/gatherInfo/core/subdomain/apis"
 	"github.com/DG9Jww/gatherInfo/core/subdomain/results"
 )
 
@@ -37,7 +37,10 @@ func Run(cfg *config.SubDomainConfig, isDir bool, wg *sync.WaitGroup) {
 		// SubDomainRes.VerifyDomain(isDir)
 
 		//brute module
-		enumerate.Run(cfg)
+		//enumerate.Run(cfg)
+
+        //apis
+        apis.Run(cfg.Domain)
 	}
 	wg.Done()
 }

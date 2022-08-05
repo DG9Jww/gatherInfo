@@ -54,15 +54,11 @@ func (cli *Client) Run() error {
 		req, err := http.NewRequest("POST", BaseUrl+"/v1/search/certificates", bytes.NewReader(body))
 		if err != nil {
 			return err
-		}
-
-		//According to the document
+		} //According to the document
 		req.Header.Add("Accept", "application/json")
 		req.Header.Add("Content-Type", "application/json")
 		req.Header.Add("Authorization", "Basic "+base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", cli.apiID, cli.apiKey))))
-		c := http.Client{
-			Timeout: 15 * time.Second,
-		}
+		c := http.Client{Timeout: 15 * time.Second}
 		resp, err := c.Do(req)
 		if err != nil {
 			return err

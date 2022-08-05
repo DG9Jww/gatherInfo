@@ -123,17 +123,14 @@ func Run(cfg *config.SubDomainConfig) {
 	file := common.LoadFile("dict/" + cfg.BruteDict)
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
-    var recvEndSignal = make(chan struct{})
-
+	var recvEndSignal = make(chan struct{})
 
 	//     ===== a goroutine for receiving DNS packet =====
 	go bruter.recvDNS(sendingSignal, recvEndSignal)
-		
-
 
 	//     ===== a goroutine for check timeout packet =====
 	//Throught continuous cycle detection,put the time out statusTable into retryChan
-	
+
 	go bruter.checkTimeout(recvEndSignal)
 
 	//    	===== A goroutine for retry =====
@@ -155,7 +152,7 @@ func Run(cfg *config.SubDomainConfig) {
 			table.retry++
 			table.time = time.Now()
 		}
-        return
+		return
 	}(limiter)
 
 	//       ============ detect wildcard domain name ===============
@@ -167,9 +164,9 @@ func Run(cfg *config.SubDomainConfig) {
 		ok, blackList := bruter.isWildCard(mainDomain)
 		if ok {
 			if cfg.WildCard {
-				logger.ConsoleLog2(logger.CustomizeLog(logger.YELLOW, "WARNING"), fmt.Sprintf("Detected Wildcard Domain: [%s]  BlackList: %v ", mainDomain, blackList))
+				logger.ConsoleLog(logger.WARN, fmt.Sprintf("Detected Wildcard Domain: [%s]  BlackList: %v ", mainDomain, blackList))
 			} else {
-				logger.ConsoleLog2(logger.CustomizeLog(logger.YELLOW, "WARNING"), fmt.Sprintf("Detected Wildcard Domain: [%s] ,Skip!", mainDomain))
+				logger.ConsoleLog(logger.WARN, fmt.Sprintf("Detected Wildcard Domain: [%s] ,Skip!", mainDomain))
 				//remove item because wildcard
 				bruter.domain = common.DeleteStringFromSlice(bruter.domain, index)
 				continue
@@ -205,9 +202,8 @@ func Run(cfg *config.SubDomainConfig) {
 				atomic.AddInt32(&total, 1)
 			}
 		}
-        return
+		return
 	}(cfg.WildCard, cfg.Validate)
-
 
 	//     ============ a goroutine for removing statusTable ==============
 	go func() {
@@ -218,7 +214,7 @@ func Run(cfg *config.SubDomainConfig) {
 			}
 			bruter.statusTabLinkList.remove(tab)
 		}
-        return
+		return
 	}()
 
 	//     ============ sending packets ==============
@@ -241,22 +237,22 @@ func Run(cfg *config.SubDomainConfig) {
 		}
 	}
 
-    <- recvEndSignal
+	<-recvEndSignal
 	//<-recvDone
 	logger.ConsoleLog(logger.CustomizeLog(logger.GREEN, ""), fmt.Sprintf("===== %d Subdomain Found =====", total))
 
 	//If enable validate
-    time.Sleep(10)
+	time.Sleep(10)
 	if cfg.Validate {
 		logger.ConsoleLog(logger.INFO, "Starting validating subdomains......")
-        pool := common.NewPool(20)
-        var wg sync.WaitGroup
-        defer pool.Release()
-		for _,subdomain := range validateList {
-            pool.Submit(isLive(subdomain,&wg))
-            wg.Add(1)
+		pool := common.NewPool(20)
+		var wg sync.WaitGroup
+		defer pool.Release()
+		for _, subdomain := range validateList {
+			pool.Submit(isLive(subdomain, &wg))
+			wg.Add(1)
 		}
-        wg.Wait()
+		wg.Wait()
 	}
 }
 
@@ -294,7 +290,7 @@ func (bru *bruter) checkTimeout(recvEndSignal chan struct{}) {
 			err := bru.statusTabLinkList.remove(currentTab)
 			//if err equal emptyLink which means the task was finished
 			if err == emptyLink {
-                close(recvEndSignal)
+				close(recvEndSignal)
 				return
 			}
 			currentTab = nextTab
