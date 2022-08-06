@@ -27,14 +27,9 @@ var ErrorCode = map[int]string{
 
 //API Information
 type APIResp struct {
-	Status   string    `json:"status"`
-	Metadata MetaData  `json:"metadata"`
 	Results  []Results `json:"results"`
 }
 
-type MetaData struct {
-	Pages int `json:"pages"`
-}
 
 type Results struct {
 	Parsed string `json:"parsed.subject_dn"`

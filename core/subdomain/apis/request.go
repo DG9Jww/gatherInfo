@@ -2,10 +2,10 @@ package apis
 
 import (
 	"bytes"
-    "io"
 	"encoding/json"
-	"fmt"
+	"io"
 	"net/http"
+	"reflect"
 
 	"github.com/DG9Jww/gatherInfo/common"
 	"github.com/DG9Jww/gatherInfo/logger"
@@ -46,72 +46,95 @@ func processResp(APIName string, resp *http.Response) {
 
 	b, _ := io.ReadAll(resp.Body)
 	apiStruct := APIStruct[APIName]
-	fmt.Printf("%T\n", apiStruct)
-	xxx(apiStruct)
-	fmt.Printf("%T\n", apiStruct)
-	//fmt.Println(reflect.ValueOf(apiStruct))
-	//instance := reflect.New(apiStruct).Elem()
-	//tmpStruct := instance.Interface()
-
-    var oo = virustotal{}
-    
-	err := json.Unmarshal(b, &oo)
+	err := json.Unmarshal(b, apiStruct)
 	if err != nil {
 		logger.ConsoleLog(logger.ERROR, err.Error())
 		return
 	}
-	fmt.Println(oo)
 
-	//v := reflect.ValueOf(tmpStruct)
-	//var structChan = make(chan reflect.Value, 10)
-	//structChan <- v
+	//return the value that the pointer points to
+	v := reflect.Indirect(reflect.ValueOf(apiStruct))
 
-	////for closing  structChan
-	//go func() {
-	//	for {
-	//		if len(resSlice) > 0 {
-	//			close(structChan)
-	//			return
-	//		}
-	//	}
-	//}()
+	/*
+	 *
+	 *    --------------------------------------------
+	 *       ptr
+	 *       ↓
+	 *      -----            -----
+	 *      reflect*Value
+	 *      -----            -----
+	 *      valChan          valChan      valChan x n
+	 *    --------------------------------------------
+	 *           structChan
+	 */
+	var maximum = 15
+	type valChan chan reflect.Value
+	var structChan = make(chan valChan, 10)
+	var vChan valChan = make(chan reflect.Value, maximum)
+	structChan <- vChan
+	vChan <- v
+	var ptr *valChan
 
-	//for v := range structChan {
-	//	for i := 0; i < v.NumField(); i++ {
-	//		field := v.Field(i)
+	//for closing Chan
+	go func() {
+		for {
+			if len(resSlice) > 0 {
+				close(structChan)
+				close(*ptr)
+				return
+			}
+		}
+	}()
 
-	//		//string (result)
-	//		if field.Kind() == reflect.String {
-	//			var s = Result{domain: v.String()}
-	//			resSlice = append(resSlice, s)
-	//		}
+	for vChan := range structChan {
+		ptr = &vChan
+		for v := range *ptr {
 
-	//		//slice
-	//		if field.Kind() == reflect.Slice {
-	//			//[]string (result)
-	//			if field.Type().Elem().Kind() == reflect.String {
-	//				// slice's length
-	//				l := field.Len()
-	//				for j := 0; j < l; j++ {
-	//					item := field.Index(j)
-	//					var s = Result{domain: item.String()}
-	//					resSlice = append(resSlice, s)
-	//				}
-	//			}
+			// struct's fields
+			for i := 0; i < v.NumField(); i++ {
+				field := v.Field(i)
+                
+				//string (result)
+				if field.Kind() == reflect.String {
+					var s = Result{domain: field.String()}
+					resSlice = append(resSlice, s)
+				}
 
-	//			//[]struct
-	//			if field.Type().Elem().Kind() == reflect.Struct {
-	//				// slice's length
-	//				l := field.Len()
-	//				for j := 0; j < l; j++ {
-	//					item := field.Index(j)
-	//					structChan <- item
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
+				//slice
+				if field.Kind() == reflect.Slice {
+					//[]string (result)
+					if field.Type().Elem().Kind() == reflect.String {
+						// slice's length
+						l := field.Len()
+						for j := 0; j < l; j++ {
+							item := field.Index(j)
+							var s = Result{domain: item.String()}
+							resSlice = append(resSlice, s)
+						}
+					}
 
-	//fmt.Println(resSlice)
+					//[]struct
+					if field.Type().Elem().Kind() == reflect.Struct {
+						// slice's length
+						l := field.Len()
+						for j := 0; j < l; j++ {
+							item := field.Index(j)
+							if len(*ptr) >= maximum {
+								close(*ptr)
+								var newChan valChan = make(chan reflect.Value, maximum)
+								ptr = &newChan
+								structChan <- newChan
+								*ptr <- item
+							} else {
+								*ptr <- item
+							}
+						}
+					}
+				}
+			}
+
+		}
+
+	}
 
 }

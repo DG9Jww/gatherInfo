@@ -1,16 +1,10 @@
 package apis
 
-import (
-	"fmt"
-	_ "reflect"
-)
-
-//var APIStruct = map[string]reflect.Type {
-//	"virustotal": reflect.TypeOf(virustotal{}),
-//}
+import ()
 
 var APIStruct = map[string]interface{}{
-	"virustotal": virustotal{},
+	"virustotal": &virustotal{},
+	"censys": &censys{},
 }
 
 //virustotal
@@ -22,12 +16,12 @@ type virustotal2 struct {
 	ID string `json:"id"`
 }
 
-func xxx(i interface{}) {
-	switch i.(type) {
-	case virustotal:
-		fmt.Println("convert to  virustotal")
-	default:
-		fmt.Println("convert failed")
-	}
 
+//censys
+type censys struct {
+	Results  []censys2 `json:"results"`
+}
+
+type censys2 struct {
+	Parsed string `json:"parsed.subject_dn"`
 }

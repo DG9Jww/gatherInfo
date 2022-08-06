@@ -60,8 +60,6 @@ func start(APIName string, data []byte, domain string, wg *sync.WaitGroup) {
 
 	//process response
 	processResp(APIName, resp)
-
-	//fmt.Println(string(b))
 }
 
 //looking for and replace variables

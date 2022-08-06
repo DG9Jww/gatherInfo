@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"fmt"
 	"io/fs"
 	"os"
 	"strings"
@@ -31,11 +32,12 @@ func Run(domains []string) []Result {
 		data, err := fs.ReadFile(fileSystem, path)
 		for _, d := range domains {
 			wg.Add(1)
+            fmt.Println("1111")
 			go start(APIName, data, d, &wg)
 		}
-		wg.Wait()
 		return nil
 	})
+	wg.Wait()
 	return resSlice
 }
 
