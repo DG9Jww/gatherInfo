@@ -48,7 +48,7 @@
 
 
 ## NOTE
-- 子域名API没搞定，数据反序列化到结构体有问题
+- 子域名API没搞定，有些API结果还需要处理，正则
 
 ## Reference
 - [ksubdomain](https://github.com/knownsec/ksubdomain)

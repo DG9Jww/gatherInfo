@@ -26,6 +26,7 @@ type APIRequest struct {
 	Headers   map[string]string      `json:"headers"`
 	Variables map[string]string      `json:"variables"`
 	PostBody  map[string]interface{} `json:"postbody"`
+	NeedRE    bool
 }
 
 //json process and send request
@@ -54,12 +55,14 @@ func start(APIName string, data []byte, domain string, wg *sync.WaitGroup) {
 	//send request
 	resp, err := req.sendRequest()
 	if err != nil {
-		logger.ConsoleLog(logger.ERROR, err.Error())
+		logger.ConsoleLog(logger.ERROR, fmt.Sprintf("API %s ERROR:%s", APIName, err.Error()))
+        return
 	}
+
 	defer resp.Body.Close()
 
 	//process response
-	processResp(APIName, resp)
+	processResp(APIName, resp, req.NeedRE)
 }
 
 //looking for and replace variables
