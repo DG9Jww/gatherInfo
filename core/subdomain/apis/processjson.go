@@ -26,7 +26,12 @@ type APIRequest struct {
 	Headers   map[string]string      `json:"headers"`
 	Variables map[string]string      `json:"variables"`
 	PostBody  map[string]interface{} `json:"postbody"`
-	NeedRE    bool
+	NeedRE    ReField                `json:"needre"`
+}
+
+type ReField struct {
+	Subdomain bool `json:"subdomain"`
+	IP        bool `json:"ip"`
 }
 
 //json process and send request
@@ -56,7 +61,7 @@ func start(APIName string, data []byte, domain string, wg *sync.WaitGroup) {
 	resp, err := req.sendRequest()
 	if err != nil {
 		logger.ConsoleLog(logger.ERROR, fmt.Sprintf("API %s ERROR:%s", APIName, err.Error()))
-        return
+		return
 	}
 
 	defer resp.Body.Close()

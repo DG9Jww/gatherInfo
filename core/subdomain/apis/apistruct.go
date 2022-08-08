@@ -8,13 +8,14 @@ var APIStruct = map[string]interface{}{
 	"censys": &censys{},
 }
 
-//Four field names have been defined,
+//Five field names have been defined,
 //you should use them in the API structs so that
 //you can parse API successfully.
 // 1.[Subdomain]  which means the tag is subdomain results    
 // 2.[IPaddress]  which means the tag is ipaddress results    
 // 3.[SubdomainSlice]  which means the tag is subdomain slice results    
-// 1.[IPaddressSlice]  which means the tag is ipaddress slice results    
+// 4.[IPaddressSlice]  which means the tag is ipaddress slice results    
+// 5.[DomainAndIP]  which means ipaddress and subdomain appear in one field    
 //
 //virustotal
 type virustotal struct {

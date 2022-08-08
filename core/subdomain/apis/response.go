@@ -6,13 +6,20 @@ import (
 	"io"
 	"net/http"
 	"reflect"
+	"regexp"
 	"time"
 
 	"github.com/DG9Jww/gatherInfo/logger"
 )
 
+//regular expression
+const (
+	getDomain = `[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z]{0,62})+\.?`
+	getIP     = `[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z]{0,62})+\.?`
+)
+
 //process response
-func processResp(APIName string, resp *http.Response, needRE bool) {
+func processResp(APIName string, resp *http.Response, needRE ReField) {
 
 	b, _ := io.ReadAll(resp.Body)
 	apiStruct := APIStruct[APIName]
@@ -74,7 +81,10 @@ func processResp(APIName string, resp *http.Response, needRE bool) {
 					case "Subdomain":
 						subdomainSlice = append(subdomainSlice, field.String())
 					case "IPaddress":
+						ipaddressSlice = append(ipaddressSlice, field.String())
+					case "DomainAndIP":
 						subdomainSlice = append(ipaddressSlice, field.String())
+						ipaddressSlice = append(ipaddressSlice, field.String())
 					}
 				}
 
@@ -136,21 +146,58 @@ func processResp(APIName string, resp *http.Response, needRE bool) {
 
 	}
 
-	fmt.Println(subdomainSlice)
+	//regular expression process
+	if needRE.IP || needRE.Subdomain {
+		var (
+			do       = true
+			tmpSlice []*[]string
+			exp      []string
+		)
+
+		switch do {
+		case needRE.Subdomain:
+			tmpSlice = append(tmpSlice, &subdomainSlice)
+			exp = append(exp, getDomain)
+		case needRE.IP:
+			tmpSlice = append(tmpSlice, &ipaddressSlice)
+			exp = append(exp, getIP)
+		}
+
+		for k, sliceAddr := range tmpSlice {
+			*sliceAddr = proRegularExp(sliceAddr, exp[k])
+		}
+	}
+
 	//
+	fmt.Println(subdomainSlice)
+	for index, subdomain := range subdomainSlice {
+		var res = Result{}
+		res.domain = subdomain
+		if len(ipaddressSlice) > 0 && index < len(ipaddressSlice) {
+			res.ip = ipaddressSlice[index]
+		}
+		resSlice = append(resSlice, res)
+	}
+
+    for _,v := range resSlice {
+        fmt.Println(v.domain)
+    }
 
 }
 
 //process ip and domain according to regular expression
-func proRegularExp(tmpResSlice []string) {
-	//getDomain := `[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z]{0,62})+\.?`
+func proRegularExp(tmpResSlice *[]string, exp string) []string {
+	var tmp []string
+	re, err := regexp.Compile(exp)
+	if err != nil {
+		return nil
+	}
 
-	//re, err := regexp.Compile(exp)
-	//if err != nil {
-	//	return
-	//}
-
-	//for _, res := range tmpResSlice {
-
-	//}
+	for _, res := range *tmpResSlice {
+		s := re.FindAllString(res, -1)
+		for _, i := range s {
+			tmp = append(tmp, i)
+		}
+	}
+	return tmp
 }

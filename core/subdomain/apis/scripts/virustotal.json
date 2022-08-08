@@ -8,5 +8,9 @@
     },
     "variables":{
         "apikey":"d4ffdd939ee9a76bd1ba3360fb97ceedf84d12dff484be953098668dc54e9236"
+    },
+    "needre":{
+        "ip":false,
+        "subdomain":true
     }
 }
