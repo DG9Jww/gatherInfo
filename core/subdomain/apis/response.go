@@ -15,20 +15,53 @@ import (
 //regular expression
 const (
 	getDomain = `[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z]{0,62})+\.?`
-	getIP     = `[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z]{0,62})+\.?`
+	getIP     = `[[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}\.[[:digit:]]{1,3}`
 )
 
 //process response
-func processResp(APIName string, resp *http.Response, needRE ReField) {
-
+func (req *APIRequest) processResp(APIName string, resp *http.Response, domain string) {
 	b, _ := io.ReadAll(resp.Body)
+	switch req.ResponseType {
+	case "json":
+		proJsonResp(b, APIName, req.NeedRE)
+	case "raw":
+		fmt.Println(APIName)
+		proRawResp(b, domain)
+	}
+
+}
+
+//process response without any format
+func proRawResp(b []byte, domain string) {
+	resp := string(b)
+	var tmpRes []string
+	tmpRes = append(tmpRes, resp)
+	//only match subdomain
+	exp := getExp(domain)
+	s := proRegularExp(&tmpRes, exp)
+	fmt.Println(s)
+	for _, subdomain := range s {
+		var res = Result{}
+		res.domain = subdomain
+		resSlice = append(resSlice, res)
+	}
+
+}
+
+//process json response
+func proJsonResp(b []byte, APIName string, needRE ReField) {
+
 	apiStruct := APIStruct[APIName]
 	err := json.Unmarshal(b, apiStruct)
 	if err != nil {
-		logger.ConsoleLog(logger.ERROR, fmt.Sprintf("API %s ERROR:%s", APIName, err.Error()))
+		logger.ConsoleLog(logger.WARN, fmt.Sprintf("API %s ERROR:%s", APIName, err.Error()))
 		return
 	}
+	fmt.Println(apiStruct)
+	v1 := reflect.Indirect(reflect.ValueOf(apiStruct))
+	if v1.Kind() == reflect.Slice {
 
+	}
 	/*
 	 *
 	 *    --------------------------------------------
@@ -69,79 +102,84 @@ func processResp(APIName string, resp *http.Response, needRE ReField) {
 	for vChan := range structChan {
 		ptr = &vChan
 		for v := range vChan {
-			// struct's fields
-			for i := 0; i < v.NumField(); i++ {
-				field := v.Field(i)
-				fieldName := v.Type().Field(i).Name
 
-				//string
-				if field.Kind() == reflect.String {
-					// result
-					switch fieldName {
-					case "Subdomain":
-						subdomainSlice = append(subdomainSlice, field.String())
-					case "IPaddress":
-						ipaddressSlice = append(ipaddressSlice, field.String())
-					case "DomainAndIP":
-						subdomainSlice = append(ipaddressSlice, field.String())
-						ipaddressSlice = append(ipaddressSlice, field.String())
-					}
-				}
+			//struct
+			if v.Kind() == reflect.Struct {
+				// struct's fields
+				for i := 0; i < v.NumField(); i++ {
+					field := v.Field(i)
+					fieldName := v.Type().Field(i).Name
 
-				//slice
-				if field.Kind() == reflect.Slice {
-					//[]string
-					if field.Type().Elem().Kind() == reflect.String {
-						var tmpSlice *[]string
+					//string
+					if field.Kind() == reflect.String {
+						// result
 						switch fieldName {
-						case "SubdomainSlice":
-							tmpSlice = &subdomainSlice
-						case "IPaddressSlice":
-							tmpSlice = &ipaddressSlice
-						}
-
-						// slice's length
-						l := field.Len()
-						for j := 0; j < l; j++ {
-							item := field.Index(j)
-							*tmpSlice = append(*tmpSlice, item.String())
+						case "Subdomain":
+							subdomainSlice = append(subdomainSlice, field.String())
+						case "IPaddress":
+							ipaddressSlice = append(ipaddressSlice, field.String())
+						case "DomainAndIP":
+							subdomainSlice = append(ipaddressSlice, field.String())
+							ipaddressSlice = append(ipaddressSlice, field.String())
 						}
 					}
 
-					//[]struct
-					if field.Type().Elem().Kind() == reflect.Struct {
-						// slice's length
-						l := field.Len()
-						for j := 0; j < l; j++ {
-							item := field.Index(j)
-							if len(*ptr) >= maximum {
-								close(*ptr)
-								var newChan valChan = make(chan reflect.Value, maximum)
-								ptr = &newChan
-								structChan <- *ptr
-								*ptr <- item
-							} else {
-								*ptr <- item
+					//slice
+					if field.Kind() == reflect.Slice {
+						//[]string
+						if field.Type().Elem().Kind() == reflect.String {
+							var tmpSlice *[]string
+							switch fieldName {
+							case "SubdomainSlice":
+								tmpSlice = &subdomainSlice
+							case "IPaddressSlice":
+								tmpSlice = &ipaddressSlice
+							}
+
+							// slice's length
+							l := field.Len()
+							for j := 0; j < l; j++ {
+								item := field.Index(j)
+								*tmpSlice = append(*tmpSlice, item.String())
 							}
 						}
+
+						//[]struct
+						if field.Type().Elem().Kind() == reflect.Struct {
+							// slice's length
+							l := field.Len()
+							for j := 0; j < l; j++ {
+								item := field.Index(j)
+								if len(*ptr) >= maximum {
+									close(*ptr)
+									var newChan valChan = make(chan reflect.Value, maximum)
+									ptr = &newChan
+									structChan <- *ptr
+									*ptr <- item
+								} else {
+									*ptr <- item
+								}
+							}
+						}
+
+					}
+
+					//struct
+					if field.Kind() == reflect.Struct {
+						if len(*ptr) >= maximum {
+							close(*ptr)
+							var newChan valChan = make(chan reflect.Value, maximum)
+							ptr = &newChan
+							structChan <- *ptr
+							*ptr <- field
+						} else {
+							*ptr <- field
+						}
 					}
 
 				}
-
-				//struct
-				if field.Kind() == reflect.Struct {
-					if len(*ptr) >= maximum {
-						close(*ptr)
-						var newChan valChan = make(chan reflect.Value, maximum)
-						ptr = &newChan
-						structChan <- *ptr
-						*ptr <- field
-					} else {
-						*ptr <- field
-					}
-				}
-
 			}
+
 		}
 
 	}
@@ -168,8 +206,7 @@ func processResp(APIName string, resp *http.Response, needRE ReField) {
 		}
 	}
 
-	//
-	fmt.Println(subdomainSlice)
+	//append into reSlice
 	for index, subdomain := range subdomainSlice {
 		var res = Result{}
 		res.domain = subdomain
@@ -178,11 +215,6 @@ func processResp(APIName string, resp *http.Response, needRE ReField) {
 		}
 		resSlice = append(resSlice, res)
 	}
-
-    for _,v := range resSlice {
-        fmt.Println(v.domain)
-    }
-
 }
 
 //process ip and domain according to regular expression
@@ -200,4 +232,9 @@ func proRegularExp(tmpResSlice *[]string, exp string) []string {
 		}
 	}
 	return tmp
+}
+
+//get subdomain regular expression
+func getExp(field string) string {
+	return fmt.Sprintf(`[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z]{0,62})*\.(%s)$?`, field)
 }

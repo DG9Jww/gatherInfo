@@ -20,13 +20,14 @@ var (
 )
 
 type APIRequest struct {
-	BaseUrl   string                 `json:"baseurl"`
-	Path      string                 `json:"path"`
-	Method    string                 `json:"method"`
-	Headers   map[string]string      `json:"headers"`
-	Variables map[string]string      `json:"variables"`
-	PostBody  map[string]interface{} `json:"postbody"`
-	NeedRE    ReField                `json:"needre"`
+	BaseUrl      string                 `json:"baseurl"`
+	Path         string                 `json:"path"`
+	Method       string                 `json:"method"`
+	Headers      map[string]string      `json:"headers"`
+	Variables    map[string]string      `json:"variables"`
+	PostBody     map[string]interface{} `json:"postbody"`
+	NeedRE       ReField                `json:"needre"`
+	ResponseType string                 `json:"response_type"`
 }
 
 type ReField struct {
@@ -46,6 +47,10 @@ func start(APIName string, data []byte, domain string, wg *sync.WaitGroup) {
 
 	//looking for function && variables and process
 	//Firstly,we must add domain name into the map
+
+	if req.Variables == nil {
+		req.Variables = make(map[string]string)
+	}
 	req.Variables["domain"] = domain
 	data1 := req.replaceVariables(data)
 	data2 := req.runFunc(funcList, data1)
@@ -67,7 +72,7 @@ func start(APIName string, data []byte, domain string, wg *sync.WaitGroup) {
 	defer resp.Body.Close()
 
 	//process response
-	processResp(APIName, resp, req.NeedRE)
+	req.processResp(APIName, resp, domain)
 }
 
 //looking for and replace variables

@@ -2,6 +2,7 @@ package common
 
 import (
 	"bufio"
+	"fmt"
 	"math/rand"
 	"os"
 	"regexp"
@@ -135,4 +136,27 @@ func DeleteStringFromSlice(strSlice []string, index int) []string {
 	tmp2 := strSlice[index+1:]
 	tmp3 := append(tmp1, tmp2...)
 	return tmp3
+}
+
+//process ip and domain according to regular expression
+func ProRegularExp(tmpResSlice *[]string, exp string) []string {
+	var tmp []string
+	re, err := regexp.Compile(exp)
+	if err != nil {
+		return nil
+	}
+
+	for _, res := range *tmpResSlice {
+		s := re.FindAllString(res, -1)
+		for _, i := range s {
+			tmp = append(tmp, i)
+		}
+	}
+	return tmp
+}
+
+
+//get subdomain regular expression
+func GetExp(field string) string {
+	return fmt.Sprintf(`[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z]{0,62})*\.(%s)$?`, field)
 }

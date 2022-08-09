@@ -6,6 +6,7 @@ import ()
 var APIStruct = map[string]interface{}{
 	"virustotal": &virustotal{},
 	"censys": &censys{},
+	"threatminer": &threatminer{},
 }
 
 //Five field names have been defined,
@@ -35,3 +36,9 @@ type censys struct {
 type censys2 struct {
 	Subdomain string `json:"parsed.subject_dn"`
 }
+
+//threatminer
+type threatminer struct {
+    SubdomainSlice []string  `json:"results"`
+}
+
