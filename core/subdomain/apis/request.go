@@ -8,9 +8,26 @@ import (
 	"github.com/DG9Jww/gatherInfo/common"
 )
 
+type APIRequest struct {
+	BaseUrl      string                 `json:"baseurl"`
+	Path         string                 `json:"path"`
+	Method       string                 `json:"method"`
+	Headers      map[string]string      `json:"headers"`
+	Variables    map[string]string      `json:"variables"`
+	PostBody     map[string]interface{} `json:"postbody"`
+	NeedRE       ReField                `json:"needre"`
+	ResponseType string                 `json:"response_type"`
+}
+
+type ReField struct {
+	Subdomain bool `json:"subdomain"`
+	IP        bool `json:"ip"`
+}
+
 func (req *APIRequest) sendRequest() (*http.Response, error) {
 	url := req.BaseUrl + req.Path
 	var apiReq *http.Request
+
 	var err error
 	if len(req.PostBody) > 0 {
 		d, err := json.Marshal(req.PostBody)

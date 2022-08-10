@@ -1,0 +1,25 @@
+{
+    "baseurl":"https://search.censys.io/api",
+    "path":"/v1/search/certificates",
+    "method":"POST",
+    "headers":{
+       "Accept":"application/json",
+       "Content-Type":"application/json",
+       "Authorization":"Basic $base64({{censysID}}:{{censysKey}})"
+    },
+    "urlparams":"",
+    "postbody":{
+       "query" : "{{domain}}",
+       "page":1,
+       "fields":["parsed.subject_dn"]
+    },
+    "variables":{
+        "censysKey":"xxxxx",
+        "censysID":"xxxxx"
+    },
+    "needre":{
+        "ip":false,
+        "subdomain":true
+    },
+    "response_type":"json"
+}

@@ -48,7 +48,7 @@
 
 
 ## NOTE
-- 子域名API没搞定，有些API结果还需要处理，正则
+- API remove duplicate
 
 ## Reference
 - [ksubdomain](https://github.com/knownsec/ksubdomain)

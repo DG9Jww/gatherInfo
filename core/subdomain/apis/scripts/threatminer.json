@@ -1,0 +1,10 @@
+{
+    "baseurl":"https://api.threatminer.org",
+    "path":"/v2/domain.php?q={{domain}}&rt=5",
+    "method":"GET",
+    "needre":{
+        "ip":false,
+        "subdomain":true
+    },
+    "response_type":"raw"
+}

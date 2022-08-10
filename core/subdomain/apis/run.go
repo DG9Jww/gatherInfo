@@ -6,7 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/DG9Jww/gatherInfo/core/subdomain/apis/scripts"
 	"github.com/DG9Jww/gatherInfo/logger"
 )
 
@@ -19,22 +18,22 @@ type Result struct {
 
 func Run(domains []string) []Result {
 
-    //some API need special process
-	go func() {
-		for _, d := range domains {
-			err, s := scripts.StartCrt(d)
-			if err != nil {
-				logger.ConsoleLog(logger.ERROR, err.Error())
-			}
-			for _, v := range s {
-				res := Result{}
-				res.domain = v
-				resSlice = append(resSlice, res)
-			}
-		}
-	}()
+	//some API need special process
+	//go func() {
+	//	for _, d := range domains {
+	//		err, s := scripts.StartCrt(d)
+	//		if err != nil {
+	//			logger.ConsoleLog(logger.ERROR, err.Error())
+	//		}
+	//		for _, v := range s {
+	//			res := Result{}
+	//			res.domain = v
+	//			resSlice = append(resSlice, res)
+	//		}
+	//	}
+	//}()
 
-    // range script directory
+	// range script directory
 	var wg sync.WaitGroup
 	fileSystem := os.DirFS(rootDir)
 	fs.WalkDir(fileSystem, ".", func(path string, d fs.DirEntry, err error) error {
@@ -55,9 +54,9 @@ func Run(domains []string) []Result {
 	})
 	wg.Wait()
 
-	// for _,v := range resSlice {
-	//     fmt.Println(v.domain)
-	// }
+	for _, v := range resSlice {
+		logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, v.domain), v.ip)
+	}
 	return resSlice
 }
 

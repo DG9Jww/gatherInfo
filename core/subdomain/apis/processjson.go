@@ -4,36 +4,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/DG9Jww/gatherInfo/logger"
 )
 
-//function
 const (
+	//function
 	funcBase64 = `$base64`
-	rootDir    = `core/subdomain/apis/scripts`
+
+	//
+	rootDir = `core/subdomain/apis/scripts`
 )
 
 var (
 	funcList = make(map[string]func(string) string)
 )
 
-type APIRequest struct {
-	BaseUrl      string                 `json:"baseurl"`
-	Path         string                 `json:"path"`
-	Method       string                 `json:"method"`
-	Headers      map[string]string      `json:"headers"`
-	Variables    map[string]string      `json:"variables"`
-	PostBody     map[string]interface{} `json:"postbody"`
-	NeedRE       ReField                `json:"needre"`
-	ResponseType string                 `json:"response_type"`
-}
-
-type ReField struct {
-	Subdomain bool `json:"subdomain"`
-	IP        bool `json:"ip"`
-}
 
 //json process and send request
 func start(APIName string, data []byte, domain string, wg *sync.WaitGroup) {
@@ -45,15 +34,17 @@ func start(APIName string, data []byte, domain string, wg *sync.WaitGroup) {
 		return
 	}
 
+
 	//looking for function && variables and process
 	//Firstly,we must add domain name into the map
-
 	if req.Variables == nil {
 		req.Variables = make(map[string]string)
 	}
 	req.Variables["domain"] = domain
 	data1 := req.replaceVariables(data)
-	data2 := req.runFunc(funcList, data1)
+    //escape
+    s := escape(data1)
+	data2 := req.runFunc(funcList, s)
 
 	//marshal json data again
 	err = json.Unmarshal([]byte(data2), req)
@@ -94,9 +85,15 @@ func (req *APIRequest) runFunc(funcList map[string]func(string) string, str stri
 		for _, v := range out {
 			//the string in the braces
 			tmp := v[1]
-			funcOut := f(tmp)
+			s, _ := strconv.Unquote("`" + tmp + "`")
+			funcOut := f(s)
 			str = regexp.MustCompile(fmt.Sprintf("\\%s\\((%s)\\)", funcStr, tmp)).ReplaceAllString(str, funcOut)
 		}
 	}
 	return str
+}
+
+//escape
+func escape(s string) string {
+    return strings.ReplaceAll(s,`\"`,`"`) 
 }

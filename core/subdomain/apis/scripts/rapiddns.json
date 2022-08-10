@@ -1,0 +1,10 @@
+{
+    "baseurl":"https://rapiddns.io",
+    "path":"/subdomain/{{domain}}?full=1",
+    "method":"GET",
+    "needre":{
+        "ip":false,
+        "subdomain":true
+    },
+    "response_type":"raw"
+}

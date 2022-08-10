@@ -1,0 +1,17 @@
+{
+    "baseurl":"https://www.virustotal.com",
+    "path":"/api/v3/domains/{{domain}}/relationships/subdomains?limit=40",
+    "method":"GET",
+    "headers":{
+       "Accept":"application/json",
+       "x-apikey":"{{apikey}}"
+    },
+    "variables":{
+        "apikey":"xxxxx"
+    },
+    "needre":{
+        "ip":false,
+        "subdomain":true
+    },
+    "response_type":"json"
+}

@@ -25,10 +25,33 @@ func (req *APIRequest) processResp(APIName string, resp *http.Response, domain s
 	case "json":
 		proJsonResp(b, APIName, req.NeedRE)
 	case "raw":
-		fmt.Println(APIName)
 		proRawResp(b, domain)
+	case "special":
+		proSpecialResp(b, APIName, domain, req.NeedRE.Subdomain)
 	}
 
+}
+
+//process response with particular function
+func proSpecialResp(b []byte, APIName string, domain string, needRE bool) {
+	p := SpecialRespMap[APIName]
+	tmp, err := p.SpecialProcess(b)
+	if err != nil {
+		logger.ConsoleLog(logger.ERROR, err.Error())
+	}
+
+	if needRE {
+        fmt.Println("9000000000000")
+		exp := getExp(domain)
+        fmt.Println(exp)
+		tmp = proRegularExp(&tmp, exp)
+	}
+    fmt.Println(tmp)
+	for _, subdomain := range tmp {
+		var res = Result{}
+		res.domain = subdomain
+		resSlice = append(resSlice, res)
+	}
 }
 
 //process response without any format
@@ -39,7 +62,6 @@ func proRawResp(b []byte, domain string) {
 	//only match subdomain
 	exp := getExp(domain)
 	s := proRegularExp(&tmpRes, exp)
-	fmt.Println(s)
 	for _, subdomain := range s {
 		var res = Result{}
 		res.domain = subdomain
@@ -126,6 +148,7 @@ func proJsonResp(b []byte, APIName string, needRE ReField) {
 
 					//slice
 					if field.Kind() == reflect.Slice {
+
 						//[]string
 						if field.Type().Elem().Kind() == reflect.String {
 							var tmpSlice *[]string

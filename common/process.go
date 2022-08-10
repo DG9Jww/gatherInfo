@@ -34,6 +34,7 @@ func MatchStr(substr string, str string) bool {
 	}
 }
 
+
 func MatchInt(i int, list []int) bool {
 	for _, v := range list {
 		if i == v {
@@ -157,6 +158,6 @@ func ProRegularExp(tmpResSlice *[]string, exp string) []string {
 
 
 //get subdomain regular expression
-func GetExp(field string) string {
-	return fmt.Sprintf(`[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z]{0,62})*\.(%s)$?`, field)
+func GetDomainExp(domain string) string {
+	return fmt.Sprintf(`[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z]{0,62})*\.(%s)$?`,domain )
 }

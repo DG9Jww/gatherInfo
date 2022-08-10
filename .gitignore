@@ -1,5 +1,4 @@
 *.toml
 *.swp
 /output/
-*.json
 *.bak
