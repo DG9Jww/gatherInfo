@@ -2,8 +2,8 @@
     "baseurl":"https://crt.sh",
     "path":"/?output=json&q={{domain}}",
     "method":"GET",
-    "response_type":"special",
     "needre":{
         "subdomain":true
-    }
+    },
+    "response_type":"special"
 }

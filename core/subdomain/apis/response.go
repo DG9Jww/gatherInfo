@@ -25,11 +25,12 @@ func (req *APIRequest) processResp(APIName string, resp *http.Response, domain s
 	case "json":
 		proJsonResp(b, APIName, req.NeedRE)
 	case "raw":
-		proRawResp(b, domain)
+		proRawResp(b, domain,APIName)
 	case "special":
 		proSpecialResp(b, APIName, domain, req.NeedRE.Subdomain)
 	}
 
+    
 }
 
 //process response with particular function
@@ -41,31 +42,30 @@ func proSpecialResp(b []byte, APIName string, domain string, needRE bool) {
 	}
 
 	if needRE {
-        fmt.Println("9000000000000")
 		exp := getExp(domain)
-        fmt.Println(exp)
 		tmp = proRegularExp(&tmp, exp)
 	}
-    fmt.Println(tmp)
 	for _, subdomain := range tmp {
 		var res = Result{}
 		res.domain = subdomain
-		resSlice = append(resSlice, res)
+        addResSlice(res)
 	}
 }
 
 //process response without any format
-func proRawResp(b []byte, domain string) {
+func proRawResp(b []byte, domain string,name string) {
+
 	resp := string(b)
 	var tmpRes []string
 	tmpRes = append(tmpRes, resp)
 	//only match subdomain
 	exp := getExp(domain)
 	s := proRegularExp(&tmpRes, exp)
+    fmt.Println("88888888",name,s)
 	for _, subdomain := range s {
 		var res = Result{}
 		res.domain = subdomain
-		resSlice = append(resSlice, res)
+        addResSlice(res)
 	}
 
 }
@@ -79,11 +79,7 @@ func proJsonResp(b []byte, APIName string, needRE ReField) {
 		logger.ConsoleLog(logger.WARN, fmt.Sprintf("API %s ERROR:%s", APIName, err.Error()))
 		return
 	}
-	fmt.Println(apiStruct)
-	v1 := reflect.Indirect(reflect.ValueOf(apiStruct))
-	if v1.Kind() == reflect.Slice {
 
-	}
 	/*
 	 *
 	 *    --------------------------------------------
@@ -96,9 +92,12 @@ func proJsonResp(b []byte, APIName string, needRE ReField) {
 	 *    --------------------------------------------
 	 *           structChan
 	 */
-
 	//return the value that the pointer points to
 	v := reflect.Indirect(reflect.ValueOf(apiStruct))
+	if v.IsZero() {
+		logger.ConsoleLog(logger.WARN, fmt.Sprintf("The unmarshal results of API %s is nil", APIName))
+		return
+	}
 	var maximum = 15
 	type valChan chan reflect.Value
 	var structChan = make(chan valChan, 10)
@@ -236,7 +235,7 @@ func proJsonResp(b []byte, APIName string, needRE ReField) {
 		if len(ipaddressSlice) > 0 && index < len(ipaddressSlice) {
 			res.ip = ipaddressSlice[index]
 		}
-		resSlice = append(resSlice, res)
+        addResSlice(res)
 	}
 }
 

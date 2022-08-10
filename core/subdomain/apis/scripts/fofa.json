@@ -1,0 +1,10 @@
+{
+    "baseurl":"https://fofa.info",
+    "path":"/api/v1/search/all?email={{email}}&key={{key}}&qbase64=$base64(domain=\"{{domain}}\")&size=1000",
+    "method":"GET",
+    "variables":{
+        "email":"xxxx",
+        "key":"xxxxx"
+    },
+    "response_type":"special"
+}

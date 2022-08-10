@@ -10,6 +10,7 @@ import (
 )
 
 var resSlice []Result
+var lock sync.Mutex
 
 type Result struct {
 	domain string
@@ -58,6 +59,12 @@ func Run(domains []string) []Result {
 		logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, v.domain), v.ip)
 	}
 	return resSlice
+}
+
+func addResSlice(item Result) {
+	lock.Lock()
+	resSlice = append(resSlice, item)
+	lock.Unlock()
 }
 
 func init() {
