@@ -16,7 +16,9 @@ There are some field in json file you should be careful:
 - `needre` We want to result like this `www.example.com`. But some API's response is like this `result is www.example.com xxxxx` even if it's json format. So we need regular expression after getting API result.  
 - `response_type` We need use diiferent ways to process response body according to this field.
 
-
+## Function
+We provide some practical functions.You can check `funcList` in `run.go`  
+- `base64`
 
 ## response_type details
 three type : `raw` | `json` | `special`

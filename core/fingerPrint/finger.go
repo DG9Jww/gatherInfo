@@ -11,7 +11,6 @@ import (
 
 	"github.com/DG9Jww/gatherInfo/common"
 	"github.com/DG9Jww/gatherInfo/config"
-	"github.com/DG9Jww/gatherInfo/core/subdomain"
 	"github.com/DG9Jww/gatherInfo/logger"
 )
 
@@ -22,16 +21,16 @@ type fingerPrint struct {
 	Name    string
 }
 
-func Run(cfg *config.FingerPrintConfig, isSubdomain bool, wg *sync.WaitGroup) {
+func Run(cfg *config.FingerPrintConfig, wg *sync.WaitGroup) {
 	if cfg.Enabled {
 		cli := NewClient(cfg)
-		cli.Run(isSubdomain)
+		cli.Run()
 		logger.ConsoleLog(logger.NORMAL, "FINGERPRINT COMPLETED")
 	}
 	wg.Done()
 }
 
-func (cli *client) Run(isSubdomain bool) {
+func (cli *client) Run() {
 	if err := cli.loadFingerPrint(); err != nil {
 		logger.ConsoleLog(logger.ERROR, err.Error())
 		return
@@ -41,38 +40,21 @@ func (cli *client) Run(isSubdomain bool) {
 	pool := common.NewPool(cli.thread)
 	defer pool.Release()
 
-	if isSubdomain {
-		for domain := range subdomain.SubDomainRes.GetDomainChan() {
-			//add prefix
-			url := cli.domainToUrl(domain)
-			for cmsName, fingerPList := range cli.fingerMap {
-				for _, fingerP := range fingerPList {
-					fingerP.Name = cmsName
-					//final url
-					tempURL := url + fingerP.Path
-					cli.wg.Add(1)
-					pool.Submit(cli.Scan(tempURL, fingerP))
-				}
+	//let's go
+	urlList := cli.getUrlList()
+	for _, url := range urlList {
+		for cmsName, fingerPList := range cli.fingerMap {
+			for _, fingerP := range fingerPList {
+				fingerP.Name = cmsName
 
+				tempURL := url + fingerP.Path
+				cli.wg.Add(1)
+				pool.Submit(cli.Scan(tempURL, fingerP))
 			}
-		}
-	} else {
-		//let's go
-		urlList := cli.getUrlList()
-		for _, url := range urlList {
-			for cmsName, fingerPList := range cli.fingerMap {
-				for _, fingerP := range fingerPList {
-					fingerP.Name = cmsName
 
-					tempURL := url + fingerP.Path
-					cli.wg.Add(1)
-					pool.Submit(cli.Scan(tempURL, fingerP))
-				}
-
-			}
 		}
-		cli.wg.Wait()
 	}
+	cli.wg.Wait()
 }
 
 func (cli *client) Scan(url string, f fingerPrint) func() {

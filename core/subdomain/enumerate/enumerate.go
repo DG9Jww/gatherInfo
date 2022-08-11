@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -40,8 +39,6 @@ var (
 	//the number of total valid subdomain
 	total int32
 
-	//for validating
-	validateList []string
 )
 
 type bruter struct {
@@ -120,7 +117,7 @@ func Run(cfg *config.SubDomainConfig) {
 	ctx := context.Background()
 
 	//load dictionary
-	file := common.LoadFile("dict/" + cfg.BruteDict)
+	file := common.LoadFile(cfg.BruteDict)
 	defer file.Close()
 	scanner := bufio.NewScanner(file)
 	var recvEndSignal = make(chan struct{})
@@ -179,7 +176,7 @@ func Run(cfg *config.SubDomainConfig) {
 	}
 
 	//     ======== a goroutine for processing results ========
-	go func(filterWildCard bool, val bool) {
+	go func(filterWildCard bool) {
 		for res := range bruteResults {
 			var printer string
 			for _, record := range res.records {
@@ -196,14 +193,11 @@ func Run(cfg *config.SubDomainConfig) {
 
 			if printer != "" {
 				logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, res.subdomain), printer)
-				if val {
-					validateList = append(validateList, res.subdomain)
-				}
 				atomic.AddInt32(&total, 1)
 			}
 		}
 		return
-	}(cfg.WildCard, cfg.Validate)
+	}(cfg.WildCard)
 
 	//     ============ a goroutine for removing statusTable ==============
 	go func() {
@@ -241,19 +235,6 @@ func Run(cfg *config.SubDomainConfig) {
 	//<-recvDone
 	logger.ConsoleLog(logger.CustomizeLog(logger.GREEN, ""), fmt.Sprintf("===== %d Subdomain Found =====", total))
 
-	//If enable validate
-	time.Sleep(10)
-	if cfg.Validate {
-		logger.ConsoleLog(logger.INFO, "Starting validating subdomains......")
-		pool := common.NewPool(20)
-		var wg sync.WaitGroup
-		defer pool.Release()
-		for _, subdomain := range validateList {
-			pool.Submit(isLive(subdomain, &wg))
-			wg.Add(1)
-		}
-		wg.Wait()
-	}
 }
 
 //Get Random Resolver

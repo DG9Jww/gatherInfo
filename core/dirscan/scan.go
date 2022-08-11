@@ -8,26 +8,17 @@ import (
 
 	"github.com/DG9Jww/gatherInfo/common"
 	"github.com/DG9Jww/gatherInfo/config"
-	"github.com/DG9Jww/gatherInfo/core/subdomain"
 	"github.com/DG9Jww/gatherInfo/logger"
 )
 
 //Either dictionary or list must be set , but not both
-func checkConfig(cfg *config.DirScanConfig, isSubDomain bool) bool {
+func checkConfig(cfg *config.DirScanConfig) bool {
 	logger.ConsoleLog(logger.NORMAL, "Checking DirScan Configuration......")
 	if cfg.UrlList != nil && cfg.UrlDic != "" {
 		logger.ConsoleLog(logger.ERROR, "Only one of urlDic and urlList is required.")
 		return false
 	}
 
-	//When you using dirscan module and did't use subdomain module,,
-	//urlList or urlDic is required.
-	if isSubDomain {
-		if cfg.UrlList == nil && cfg.UrlDic == "" {
-			logger.ConsoleLog(logger.ERROR, "UrlDic or UrlList is required.")
-			return false
-		}
-	}
 
 	if cfg.PayloadDic == "" {
 		logger.ConsoleLog(logger.ERROR, "DirScan payload dictionary must be set")
@@ -129,7 +120,7 @@ func (cli *client) Scan(domain string, wg1 *sync.WaitGroup) func() {
 	}
 }
 
-func (cli *client) Run(isSubDomain bool) {
+func (cli *client) Run() {
 	logger.ConsoleLog(logger.NORMAL, "Dirscan is Running......")
 
 	//load payload file
@@ -143,33 +134,25 @@ func (cli *client) Run(isSubDomain bool) {
 
 	//If subdomain module has already been enable,domainList in dirScan
 	//will be replaced by subdomain module results
-	if isSubDomain {
-		dirChan := subdomain.SubDomainRes.GetDomainChan()
-		for domain := range dirChan {
-			p.Submit(cli.Scan(domain, &wg))
-			wg.Add(1)
-		}
-	} else {
-		logger.ConsoleLog(logger.WARN, "subdomain did not enable")
-		//if exist url dictionary
-		if cli.urlDic != "" {
-			handle := common.LoadFile(cli.urlDic)
-			cli.urlList = common.FileToSlice(handle)
-		}
-		for _, v := range cli.urlList {
-			p.Submit(cli.Scan(v, &wg))
-			wg.Add(1)
-		}
+	logger.ConsoleLog(logger.WARN, "subdomain did not enable")
+	//if exist url dictionary
+	if cli.urlDic != "" {
+		handle := common.LoadFile(cli.urlDic)
+		cli.urlList = common.FileToSlice(handle)
+	}
+	for _, v := range cli.urlList {
+		p.Submit(cli.Scan(v, &wg))
+		wg.Add(1)
 	}
 
 	wg.Wait()
 }
 
-func Run(cfg *config.DirScanConfig, isSubDomain bool, wg *sync.WaitGroup) {
+func Run(cfg *config.DirScanConfig, wg *sync.WaitGroup) {
 	if cfg.Enabled {
 		cli := NewClient(cfg)
-		if checkConfig(cfg, isSubDomain) {
-			cli.Run(isSubDomain)
+		if checkConfig(cfg) {
+			cli.Run()
 		} else {
 			logger.ConsoleLog(logger.WARN, "Please check your config or params !")
 		}

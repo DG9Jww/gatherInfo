@@ -3,7 +3,6 @@ package apis
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/DG9Jww/gatherInfo/common"
@@ -27,7 +26,6 @@ type ReField struct {
 
 func (req *APIRequest) sendRequest() (*http.Response, error) {
 	url := req.BaseUrl + req.Path
-    fmt.Println(url)
 	var apiReq *http.Request
 
 	var err error

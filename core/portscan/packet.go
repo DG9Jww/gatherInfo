@@ -125,7 +125,7 @@ func (cli *client) recvPackets(devName string) {
 	defer handle.Close()
 	err := handle.SetBPFFilter("tcp and dst portrange 50000-55000")
 	if err != nil {
-		logger.ConsoleLog(logger.ERROR, fmt.Sprintf("SetBPFFilter Failed:", err.Error()))
+		logger.ConsoleLog(logger.ERROR, fmt.Sprintf("SetBPFFilter Failed:%s", err.Error()))
 	}
 
 	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())

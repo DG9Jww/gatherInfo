@@ -7,22 +7,21 @@ import (
 
 	"github.com/DG9Jww/gatherInfo/common"
 	"github.com/DG9Jww/gatherInfo/config"
-	"github.com/DG9Jww/gatherInfo/core/subdomain"
 	"github.com/DG9Jww/gatherInfo/logger"
 	"github.com/google/gopacket/pcap"
 )
 
-func Run(cfg *config.PortScanConfig, isSubdomain bool, wg *sync.WaitGroup) {
+func Run(cfg *config.PortScanConfig, wg *sync.WaitGroup) {
 	if cfg.Enabled {
-		if check(cfg, isSubdomain) {
+		if check(cfg) {
 			cli := newClient(cfg)
-			cli.Run(isSubdomain)
+			cli.Run()
 		}
 	}
 	wg.Done()
 }
 
-func (cli *client) Run(isSubdomain bool) {
+func (cli *client) Run() {
 	logger.ConsoleLog(logger.NORMAL, "PortScan is Running......")
 	dev := common.AutoGetDevice()
 	src_mac, _ := net.ParseMAC(dev["srcMAC"])
@@ -48,24 +47,13 @@ func (cli *client) Run(isSubdomain bool) {
 	//start task
 	pool := common.NewPool(cli.coroutine)
 	defer pool.Release()
-	if isSubdomain {
-		for ip := range subdomain.SubDomainRes.GetIPChan() {
-			var wg sync.WaitGroup
-			for _, port := range cli.portList {
-				pool.Submit(cli.task(&wg, port, ip, handle, ethTab))
-				wg.Add(1)
-			}
-			wg.Wait()
+	for _, ip := range cli.ipList {
+		var wg sync.WaitGroup
+		for _, port := range cli.portList {
+			pool.Submit(cli.task(&wg, port, ip, handle, ethTab))
+			wg.Add(1)
 		}
-	} else {
-		for _, ip := range cli.ipList {
-			var wg sync.WaitGroup
-			for _, port := range cli.portList {
-				pool.Submit(cli.task(&wg, port, ip, handle, ethTab))
-				wg.Add(1)
-			}
-			wg.Wait()
-		}
+		wg.Wait()
 	}
 	time.Sleep(time.Second * 15)
 	logger.ConsoleLog(logger.NORMAL, "PortScan is Completed")

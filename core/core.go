@@ -5,6 +5,7 @@ Author:DG9J
 package core
 
 import (
+	"fmt"
 	"os"
 	"sync"
 
@@ -17,6 +18,7 @@ import (
 )
 
 func Execute() {
+    fmt.Println(os.Args[2])
 	var cfg *config.MyConfig
 	//configuration file mode
 	if len(os.Args) == 1 {
@@ -37,8 +39,8 @@ func Execute() {
 	var wg sync.WaitGroup
 	wg.Add(4)
 	go subdomain.Run(&cfg.SubDomain, cfg.DirScan.Enabled, &wg)
-	go dirscan.Run(&cfg.DirScan, cfg.SubDomain.Enabled, &wg)
-	go portscan.Run(&cfg.PortScan, cfg.SubDomain.Enabled, &wg)
-	go fingerprint.Run(&cfg.FingerPrint, cfg.SubDomain.Enabled, &wg)
+	go dirscan.Run(&cfg.DirScan, &wg)
+	go portscan.Run(&cfg.PortScan, &wg)
+	go fingerprint.Run(&cfg.FingerPrint, &wg)
 	wg.Wait()
 }

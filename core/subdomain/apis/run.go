@@ -10,8 +10,21 @@ import (
 	"github.com/DG9Jww/gatherInfo/logger"
 )
 
+
+const (
+	//function
+	funcBase64 = `$base64`
+)
+
+
 var resSlice []string
 var lock sync.Mutex
+var (
+	funcList = make(map[string]func(string) string)
+
+	//
+	rootDir = `core/subdomain/apis/scripts`
+)
 
 //return subdomain slice
 func Run(domains []string) []string {
@@ -37,12 +50,8 @@ func Run(domains []string) []string {
 	})
 	wg.Wait()
 
-    //remove duplicates
-    resSlice = common.RemoveStringDuplicate(resSlice)
-
-	for _, v := range resSlice {
-		logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, v),"")
-	}
+	//remove duplicates
+	resSlice = common.RemoveStringDuplicate(resSlice)
 	return resSlice
 }
 

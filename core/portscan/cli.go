@@ -48,7 +48,7 @@ func newClient(cfg *config.PortScanConfig) *client {
 	}
 }
 
-func check(cfg *config.PortScanConfig, isSubdomain bool) bool {
+func check(cfg *config.PortScanConfig) bool {
 	//check port number
 	if common.GetMaxInt(cfg.PortList) > 65535 {
 		logger.ConsoleLog(logger.ERROR, "Please check your port!!!")
@@ -70,11 +70,6 @@ func check(cfg *config.PortScanConfig, isSubdomain bool) bool {
 		cfg.PortList = defaultPorts
 	}
 
-	if isSubdomain && config.Mode == 0 {
-		if cfg.IPDict != "" || cfg.IPList != nil {
-			return false
-		}
-	}
 
 	return true
 }

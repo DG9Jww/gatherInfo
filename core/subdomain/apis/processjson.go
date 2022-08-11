@@ -11,17 +11,7 @@ import (
 	"github.com/DG9Jww/gatherInfo/logger"
 )
 
-const (
-	//function
-	funcBase64 = `$base64`
 
-	//
-	rootDir = `core/subdomain/apis/scripts`
-)
-
-var (
-	funcList = make(map[string]func(string) string)
-)
 
 
 //json process and send request

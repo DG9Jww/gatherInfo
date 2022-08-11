@@ -36,6 +36,7 @@ func (req *APIRequest) processResp(APIName string, resp *http.Response, domain s
 func proSpecialResp(b []byte, APIName string, domain string, needRE bool) {
 	p := SpecialRespMap[APIName]
 	tmp, err := p.SpecialProcess(b)
+    fmt.Println(APIName)
 	if err != nil {
 		logger.ConsoleLog(logger.ERROR, err.Error())
 	}
@@ -58,7 +59,6 @@ func proRawResp(b []byte, domain string, name string) {
 	//only match subdomain
 	exp := getExp(domain)
 	s := proRegularExp(&tmpRes, exp)
-	fmt.Println("88888888", name, s)
 	for _, subdomain := range s {
 		addResSlice(subdomain)
 	}
