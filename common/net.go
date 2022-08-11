@@ -27,7 +27,7 @@ func directPolicyFunc(req *http.Request, via []*http.Request) error {
 func NewHttpClient() *http.Client {
 	return &http.Client{
 		CheckRedirect: directPolicyFunc,
-		Timeout:       time.Second * 15,
+		Timeout:       time.Second * 22,
 		Transport:     globalTransport,
 	}
 }

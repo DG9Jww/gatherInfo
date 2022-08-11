@@ -6,33 +6,15 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/DG9Jww/gatherInfo/common"
 	"github.com/DG9Jww/gatherInfo/logger"
 )
 
-var resSlice []Result
+var resSlice []string
 var lock sync.Mutex
 
-type Result struct {
-	domain string
-	ip     string
-}
-
-func Run(domains []string) []Result {
-
-	//some API need special process
-	//go func() {
-	//	for _, d := range domains {
-	//		err, s := scripts.StartCrt(d)
-	//		if err != nil {
-	//			logger.ConsoleLog(logger.ERROR, err.Error())
-	//		}
-	//		for _, v := range s {
-	//			res := Result{}
-	//			res.domain = v
-	//			resSlice = append(resSlice, res)
-	//		}
-	//	}
-	//}()
+//return subdomain slice
+func Run(domains []string) []string {
 
 	// range script directory
 	var wg sync.WaitGroup
@@ -55,13 +37,16 @@ func Run(domains []string) []Result {
 	})
 	wg.Wait()
 
+    //remove duplicates
+    resSlice = common.RemoveStringDuplicate(resSlice)
+
 	for _, v := range resSlice {
-		logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, v.domain), v.ip)
+		logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, v),"")
 	}
 	return resSlice
 }
 
-func addResSlice(item Result) {
+func addResSlice(item string) {
 	lock.Lock()
 	resSlice = append(resSlice, item)
 	lock.Unlock()

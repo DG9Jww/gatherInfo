@@ -7,7 +7,6 @@
        "Content-Type":"application/json",
        "Authorization":"Basic $base64({{censysID}}:{{censysKey}})"
     },
-    "urlparams":"",
     "postbody":{
        "query" : "{{domain}}",
        "page":1,

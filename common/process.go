@@ -34,6 +34,19 @@ func MatchStr(substr string, str string) bool {
 	}
 }
 
+//remove duplicates from string slice
+func RemoveStringDuplicate(s []string) []string {
+    var foo = make(map[string]bool)
+    var tmp []string
+    for _,value := range s {
+        if  _,ok := foo[value];!ok {
+            foo[value] = true
+            tmp = append(tmp, value)
+        }
+    }
+    return tmp
+}
+
 
 func MatchInt(i int, list []int) bool {
 	for _, v := range list {

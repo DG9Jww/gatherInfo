@@ -25,12 +25,11 @@ func (req *APIRequest) processResp(APIName string, resp *http.Response, domain s
 	case "json":
 		proJsonResp(b, APIName, req.NeedRE)
 	case "raw":
-		proRawResp(b, domain,APIName)
+		proRawResp(b, domain, APIName)
 	case "special":
 		proSpecialResp(b, APIName, domain, req.NeedRE.Subdomain)
 	}
 
-    
 }
 
 //process response with particular function
@@ -46,14 +45,12 @@ func proSpecialResp(b []byte, APIName string, domain string, needRE bool) {
 		tmp = proRegularExp(&tmp, exp)
 	}
 	for _, subdomain := range tmp {
-		var res = Result{}
-		res.domain = subdomain
-        addResSlice(res)
+		addResSlice(subdomain)
 	}
 }
 
 //process response without any format
-func proRawResp(b []byte, domain string,name string) {
+func proRawResp(b []byte, domain string, name string) {
 
 	resp := string(b)
 	var tmpRes []string
@@ -61,11 +58,9 @@ func proRawResp(b []byte, domain string,name string) {
 	//only match subdomain
 	exp := getExp(domain)
 	s := proRegularExp(&tmpRes, exp)
-    fmt.Println("88888888",name,s)
+	fmt.Println("88888888", name, s)
 	for _, subdomain := range s {
-		var res = Result{}
-		res.domain = subdomain
-        addResSlice(res)
+		addResSlice(subdomain)
 	}
 
 }
@@ -229,13 +224,8 @@ func proJsonResp(b []byte, APIName string, needRE ReField) {
 	}
 
 	//append into reSlice
-	for index, subdomain := range subdomainSlice {
-		var res = Result{}
-		res.domain = subdomain
-		if len(ipaddressSlice) > 0 && index < len(ipaddressSlice) {
-			res.ip = ipaddressSlice[index]
-		}
-        addResSlice(res)
+	for _, subdomain := range subdomainSlice {
+		addResSlice(subdomain)
 	}
 }
 
