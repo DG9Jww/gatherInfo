@@ -40,6 +40,7 @@ type SubDomainConfig struct {
 	Validate  bool
 	BruteDict string
 	Mode      string
+	OutPut    string
 	Enabled   bool
 }
 
@@ -134,6 +135,7 @@ func SubDomainInit(cfg *SubDomainConfig) {
 	subDomainCmd.Flags().Int64VarP(&cfg.BandWidth, "bandwidth", "b", 30000, "BandWidth,unit is byte. 30000 indicates about 300 packets / second")
 	subDomainCmd.Flags().StringVarP(&cfg.BruteDict, "dict", "p", "dict/subdomain.txt", "Payload Dictionary Path For Brute")
 	subDomainCmd.Flags().StringVarP(&cfg.Mode, "mode", "m", "", "Subdomain moudule mode")
+	subDomainCmd.Flags().StringVarP(&cfg.OutPut, "output", "o","", "OutPut file path")
 	subDomainCmd.Flags().BoolVarP(&cfg.WildCard, "wildcard", "w", false, "Scanning wildCard domain name,default is closed")
 	subDomainCmd.Flags().BoolVarP(&cfg.Validate, "validate", "v", false, "Validating the subdomains whether they live")
 	rootCmd.AddCommand(subDomainCmd)

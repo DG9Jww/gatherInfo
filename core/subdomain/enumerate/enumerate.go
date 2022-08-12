@@ -16,11 +16,13 @@ import (
 
 	"github.com/DG9Jww/gatherInfo/common"
 	"github.com/DG9Jww/gatherInfo/config"
+	"github.com/DG9Jww/gatherInfo/core/subdomain/result"
 	"github.com/DG9Jww/gatherInfo/logger"
 	"github.com/google/gopacket/pcap"
 	"golang.org/x/time/rate"
 )
 
+//
 var (
 	timeout  time.Duration = -1 * time.Second
 	snapshot int32         = 65535
@@ -38,7 +40,6 @@ var (
 
 	//the number of total valid subdomain
 	total int32
-
 )
 
 type bruter struct {
@@ -192,11 +193,13 @@ func Run(cfg *config.SubDomainConfig) {
 			}
 
 			if printer != "" {
-				logger.ConsoleLog2(logger.CustomizeLog(logger.BLUE, res.subdomain), printer)
+				var r = &result.Result{}
+				r.SetSubdomain(res.subdomain)
+				r.SetRecord(printer)
+				result.FinalResults <- r
 				atomic.AddInt32(&total, 1)
 			}
 		}
-		return
 	}(cfg.WildCard)
 
 	//     ============ a goroutine for removing statusTable ==============

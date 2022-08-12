@@ -36,7 +36,6 @@ func (req *APIRequest) processResp(APIName string, resp *http.Response, domain s
 func proSpecialResp(b []byte, APIName string, domain string, needRE bool) {
 	p := SpecialRespMap[APIName]
 	tmp, err := p.SpecialProcess(b)
-    fmt.Println(APIName)
 	if err != nil {
 		logger.ConsoleLog(logger.ERROR, err.Error())
 	}

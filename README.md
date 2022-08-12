@@ -21,9 +21,10 @@
 - `-p` payload爆破字典路径,默认为`dict`目录下`subdomain.txt` 
 - `-v` 加上此参数会验证域名是否存活
 - `-w` 加上此参数，会强制爆破泛解析域名。默认遇到泛解析会跳过
-- `-m` 可用此参数指定模式。默认先查询API再进行爆破。`-m api` | `-m enu` 只使用API查询或只进行爆破
+- `-m` 可用此参数指定模式,默认先查询API再进行爆破。`-m api` | `-m enu` 只使用API查询或只进行爆破
+- `-o` 使用此选项，可指定输出文件名。文件输出在项目的`output`目录下，如过不存在会自动创建。输出文件应为`xlsx`格式
 
-例子：`go run ./main.go subdomain -d google.com -m api -v`
+例子：`go run ./main.go subdomain -d google.com -m api -v -o test.xlsx`
 
 ### 目录扫描模块
 

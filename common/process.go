@@ -39,6 +39,7 @@ func RemoveStringDuplicate(s []string) []string {
     var foo = make(map[string]bool)
     var tmp []string
     for _,value := range s {
+        value = strings.TrimSpace(value)
         if  _,ok := foo[value];!ok {
             foo[value] = true
             tmp = append(tmp, value)

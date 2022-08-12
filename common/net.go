@@ -17,6 +17,7 @@ import (
 //var proxy = func(*http.Request) (*url.URL, error) {
 //	return url.Parse("http://127.0.0.1:8080")
 //}
+
 var globalTransport = &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
 
 //redirect is forbidden
@@ -27,7 +28,7 @@ func directPolicyFunc(req *http.Request, via []*http.Request) error {
 func NewHttpClient() *http.Client {
 	return &http.Client{
 		CheckRedirect: directPolicyFunc,
-		Timeout:       time.Second * 22,
+		Timeout:       time.Second * 10,
 		Transport:     globalTransport,
 	}
 }
