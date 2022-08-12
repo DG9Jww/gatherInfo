@@ -47,7 +47,7 @@ func Run(cfg *config.SubDomainConfig, isDir bool, wg *sync.WaitGroup) {
 			for _, subdomain := range subdomainList {
 				ip, _ := net.LookupIP(subdomain)
 				for _, v := range ip {
-					if v != nil {
+					if v.To4() != nil {
 						var r = &result.Result{}
 						r.SetSubdomain(subdomain)
 						r.SetRecord(v.To4().String())

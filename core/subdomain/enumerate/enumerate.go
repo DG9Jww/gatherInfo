@@ -235,7 +235,10 @@ func Run(cfg *config.SubDomainConfig) {
 	}
 
 	<-recvEndSignal
-	//<-recvDone
+
+    //buffer
+    time.Sleep(time.Second * 5)
+
 	logger.ConsoleLog(logger.CustomizeLog(logger.GREEN, ""), fmt.Sprintf("===== %d Subdomain Found =====", total))
 
 }

@@ -1,12 +1,6 @@
 [subdomain]
 enabled = true
 domain = ""
-
-fofaKey = "xxxxx"
-fofaEmail ="xxxxx"
-
-censysKey = "xxxxx"
-censysID = "xxxxx"
     
 [portscan]
 Enabled = false
