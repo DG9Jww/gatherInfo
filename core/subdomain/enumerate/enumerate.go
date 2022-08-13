@@ -228,7 +228,7 @@ func Run(cfg *config.SubDomainConfig) {
 			case <-recvEndSignal:
 				return
 			default:
-				time.Sleep(time.Millisecond * 200)
+				time.Sleep(time.Millisecond * 40)
 				fmt.Printf("\r%d/%d", bar.Cur, bar.Total)
 			}
 		}

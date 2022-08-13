@@ -31,8 +31,8 @@ func Run(cfg *config.SubDomainConfig, isDir bool, wg *sync.WaitGroup) {
 		//process results
 		go func() {
 			for r := range result.FinalResults {
-                s := fmt.Sprintf("%s[%s]%s %s", logger.BLUE, r.GetSubdomain(), logger.ENDC, r.GetRecord())
-				logger.ConsoleLog(logger.NORMAL,s)
+				s := fmt.Sprintf("%s[%s]%s %s", logger.BLUE, r.GetSubdomain(), logger.ENDC, r.GetRecord())
+				logger.ConsoleLog(logger.CustomizeLog(logger.WHITE, fmt.Sprintf("\r[%s%s%s]", logger.WHITE, "+", logger.ENDC)), s)
 				if cfg.Validate || cfg.OutPut != "" {
 					resList = append(resList, r)
 				}
