@@ -10,6 +10,15 @@ import (
 	"strings"
 )
 
+//progress bar
+type ProcessBar struct {
+	//total amount
+	Total int64
+
+	//current amount
+	Cur int64
+}
+
 func StringToSlice(target string, sep string) []string {
 	t := strings.TrimSpace(target)
 	return strings.Split(t, sep)
@@ -36,18 +45,17 @@ func MatchStr(substr string, str string) bool {
 
 //remove duplicates from string slice
 func RemoveStringDuplicate(s []string) []string {
-    var foo = make(map[string]bool)
-    var tmp []string
-    for _,value := range s {
-        value = strings.TrimSpace(value)
-        if  _,ok := foo[value];!ok {
-            foo[value] = true
-            tmp = append(tmp, value)
-        }
-    }
-    return tmp
+	var foo = make(map[string]bool)
+	var tmp []string
+	for _, value := range s {
+		value = strings.TrimSpace(value)
+		if _, ok := foo[value]; !ok {
+			foo[value] = true
+			tmp = append(tmp, value)
+		}
+	}
+	return tmp
 }
-
 
 func MatchInt(i int, list []int) bool {
 	for _, v := range list {
@@ -170,8 +178,7 @@ func ProRegularExp(tmpResSlice *[]string, exp string) []string {
 	return tmp
 }
 
-
 //get subdomain regular expression
 func GetDomainExp(domain string) string {
-	return fmt.Sprintf(`[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z]{0,62})*\.(%s)$?`,domain )
+	return fmt.Sprintf(`[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z]{0,62})*\.(%s)$?`, domain)
 }

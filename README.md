@@ -51,6 +51,8 @@
 
 ## NOTE
 - API remove duplicate
+- progressbar
+- removedTabChan
 
 ## Reference
 - [ksubdomain](https://github.com/knownsec/ksubdomain)

@@ -36,7 +36,7 @@ var (
 	bruteResults = make(chan RecvResults, 100)
 
 	//tables need being removed
-	removedTabChan chan TabInfo
+	removedTabChan chan *statusTable
 
 	//the number of total valid subdomain
 	total int32
@@ -92,7 +92,7 @@ func newBruter(cfg *config.SubDomainConfig) *bruter {
 	packetSize := int64(100) //the size of DNS packet is about 74
 	myRate := cfg.BandWidth / packetSize
 	myLinkList := initTabLinkList()
-	removedTabChan = make(chan TabInfo, myRate)
+	removedTabChan = make(chan *statusTable, myRate)
 
 	myHandle, _ = pcap.OpenLive(myEthTab.devName, snapshot, promisc, timeout)
 	b := &bruter{
@@ -112,6 +112,10 @@ func newBruter(cfg *config.SubDomainConfig) *bruter {
 func Run(cfg *config.SubDomainConfig) {
 	bruter := newBruter(cfg)
 	defer bruter.handle.Close()
+	//progress bar
+    common.ProcessBar
+
+
 
 	//limit the rate according to the bandwith option
 	limiter := rate.NewLimiter(rate.Every(time.Duration(time.Second.Nanoseconds()/bruter.rate)), int(bruter.rate))
@@ -129,7 +133,7 @@ func Run(cfg *config.SubDomainConfig) {
 	//     ===== a goroutine for check timeout packet =====
 	//Throught continuous cycle detection,put the time out statusTable into retryChan
 
-	go bruter.checkTimeout(recvEndSignal)
+	go bruter.checkTimeout()
 
 	//    	===== A goroutine for retry =====
 	//Trying to get statusTable from retryChan and
@@ -203,13 +207,16 @@ func Run(cfg *config.SubDomainConfig) {
 	}(cfg.WildCard)
 
 	//     ============ a goroutine for removing statusTable ==============
+
 	go func() {
-		for tabInfo := range removedTabChan {
-			tab, err := bruter.statusTabLinkList.queryStatusTab(tabInfo.subdomain, tabInfo.flagID)
-			if err != nil {
-				continue
+		for tab := range removedTabChan {
+			err := bruter.statusTabLinkList.remove(tab)
+			//if err equal emptyLink which means the task was finished
+			if err == emptyLink {
+				close(recvEndSignal)
+				return
 			}
-			bruter.statusTabLinkList.remove(tab)
+			bar.cur++
 		}
 		return
 	}()
@@ -229,6 +236,7 @@ func Run(cfg *config.SubDomainConfig) {
 			limiter.Wait(ctx)
 			//record status and send DNS packet
 			table := bruter.recordStatus(domain, resolver, bruter.srcPort, flagID)
+			bar.total++
 			bruter.sendDNS(domain, resolver, flagID)
 			table.status = 1
 		}
@@ -236,8 +244,8 @@ func Run(cfg *config.SubDomainConfig) {
 
 	<-recvEndSignal
 
-    //buffer
-    time.Sleep(time.Second * 5)
+	//buffer
+	time.Sleep(time.Second * 5)
 
 	logger.ConsoleLog(logger.CustomizeLog(logger.GREEN, ""), fmt.Sprintf("===== %d Subdomain Found =====", total))
 
@@ -262,24 +270,29 @@ func (bru *bruter) recordStatus(domain, resolver string, srcPort uint16, flagID 
 
 //check the timeout item from statusTableChan
 //and put the timeout item into retryChan
-func (bru *bruter) checkTimeout(recvEndSignal chan struct{}) {
+func (bru *bruter) checkTimeout() {
 	currentTab := bru.statusTabLinkList.head
+
+	//in case this goroutine run before sending packet goroutine
+	for {
+		if currentTab != nil && bru.statusTabLinkList.size > 0 {
+			break
+		} else {
+			currentTab = bru.statusTabLinkList.head
+		}
+	}
+
 	for {
 
-		//invalid
+		//empty link
 		if currentTab == nil {
-			currentTab = bru.statusTabLinkList.head
-			continue
+			fmt.Println("------------------------")
+			return
 		}
 
 		if currentTab.retry >= 2 {
 			nextTab := currentTab.next
-			err := bru.statusTabLinkList.remove(currentTab)
-			//if err equal emptyLink which means the task was finished
-			if err == emptyLink {
-				close(recvEndSignal)
-				return
-			}
+			removedTabChan <- currentTab
 			currentTab = nextTab
 			continue
 		}

@@ -36,7 +36,7 @@ type statusTable struct {
 }
 
 type tableLinkList struct {
-	size int
+	size int64
 	head *statusTable
 	tail *statusTable
 	lock sync.Mutex
@@ -54,6 +54,7 @@ func (link *tableLinkList) isEmpty() bool {
 func (link *tableLinkList) append(newTab *statusTable) {
 	link.lock.Lock()
 	defer link.lock.Unlock()
+	link.size++
 	if link.isEmpty() {
 		link.head = newTab
 		link.tail = newTab
@@ -65,7 +66,6 @@ func (link *tableLinkList) append(newTab *statusTable) {
 	link.tail.next = newTab
 	link.head.pre = newTab
 	link.tail = newTab
-	link.size++
 
 }
 
@@ -81,6 +81,7 @@ func (link *tableLinkList) remove(tab *statusTable) error {
 		link.tail = nil
 		link.head = nil
 		tab = nil
+		link.size--
 		return nil
 	}
 	if tab == link.head {
