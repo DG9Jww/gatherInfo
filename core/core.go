@@ -5,7 +5,6 @@ Author:DG9J
 package core
 
 import (
-	"fmt"
 	"os"
 	"sync"
 
