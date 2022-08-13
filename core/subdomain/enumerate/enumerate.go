@@ -113,9 +113,7 @@ func Run(cfg *config.SubDomainConfig) {
 	bruter := newBruter(cfg)
 	defer bruter.handle.Close()
 	//progress bar
-    common.ProcessBar
-
-
+	bar := common.NewBar()
 
 	//limit the rate according to the bandwith option
 	limiter := rate.NewLimiter(rate.Every(time.Duration(time.Second.Nanoseconds()/bruter.rate)), int(bruter.rate))
@@ -216,15 +214,31 @@ func Run(cfg *config.SubDomainConfig) {
 				close(recvEndSignal)
 				return
 			}
-			bar.cur++
+			bar.Cur++
 		}
 		return
+	}()
+
+
+	//     ============ print progress ==============
+	go func() {
+		for {
+			select {
+			case <-recvEndSignal:
+				return
+			default:
+				time.Sleep(time.Millisecond * 200)
+				fmt.Printf("\r%d/%d", bar.Cur, bar.Total)
+			}
+		}
 	}()
 
 	//     ============ sending packets ==============
 	if len(bruter.domain) == 0 {
 		return
 	}
+
+    //start range file
 	for scanner.Scan() {
 		for _, mainDomain := range bruter.domain {
 			//get parameters
@@ -236,7 +250,7 @@ func Run(cfg *config.SubDomainConfig) {
 			limiter.Wait(ctx)
 			//record status and send DNS packet
 			table := bruter.recordStatus(domain, resolver, bruter.srcPort, flagID)
-			bar.total++
+			bar.Total++
 			bruter.sendDNS(domain, resolver, flagID)
 			table.status = 1
 		}

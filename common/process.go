@@ -11,7 +11,7 @@ import (
 )
 
 //progress bar
-type ProcessBar struct {
+type processBar struct {
 	//total amount
 	Total int64
 
@@ -19,6 +19,12 @@ type ProcessBar struct {
 	Cur int64
 }
 
+//
+func NewBar() *processBar {
+    return &processBar{} 
+}
+
+//
 func StringToSlice(target string, sep string) []string {
 	t := strings.TrimSpace(target)
 	return strings.Split(t, sep)

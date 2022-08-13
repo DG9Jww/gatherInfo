@@ -18,7 +18,6 @@ import (
 )
 
 func Execute() {
-    fmt.Println(os.Args[2])
 	var cfg *config.MyConfig
 	//configuration file mode
 	if len(os.Args) == 1 {
