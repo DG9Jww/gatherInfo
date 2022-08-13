@@ -30,9 +30,7 @@ func Execute() {
 		cfg = config.ConfigCommandInit(module)
 		config.Mode = 0
 	}
-	//logger initializing
-	//num := calcuEnabled(cfg)
-	//logger.LoggerInit(num)
+
 	//Run Modules
 	var wg sync.WaitGroup
 	wg.Add(4)

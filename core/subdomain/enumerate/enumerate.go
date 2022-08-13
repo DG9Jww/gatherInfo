@@ -114,6 +114,7 @@ func Run(cfg *config.SubDomainConfig) {
 	defer bruter.handle.Close()
 	//progress bar
 	bar := common.NewBar()
+    
 
 	//limit the rate according to the bandwith option
 	limiter := rate.NewLimiter(rate.Every(time.Duration(time.Second.Nanoseconds()/bruter.rate)), int(bruter.rate))

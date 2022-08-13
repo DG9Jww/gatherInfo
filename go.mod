@@ -1,9 +1,8 @@
-module info
+module github.com/DG9Jww/gatherInfo
 
 go 1.18
 
 require (
-	github.com/DG9Jww/gatherInfo v0.0.0-20220812143448-d2c95e3355ff
 	github.com/google/gopacket v1.1.19
 	github.com/panjf2000/ants/v2 v2.5.0
 	github.com/spf13/cobra v1.5.0
@@ -30,9 +29,9 @@ require (
 	github.com/subosito/gotenv v1.3.0 // indirect
 	github.com/xuri/efp v0.0.0-20220407160117-ad0f7a785be8 // indirect
 	github.com/xuri/nfp v0.0.0-20220409054826-5e722a1d9e22 // indirect
-	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
+	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2 // indirect
-	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
+	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
