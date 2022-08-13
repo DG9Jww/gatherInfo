@@ -212,6 +212,7 @@ func Run(cfg *config.SubDomainConfig) {
 			err := bruter.statusTabLinkList.remove(tab)
 			//if err equal emptyLink which means the task was finished
 			if err == emptyLink {
+                fmt.Println("11111111111111111")
 				close(recvEndSignal)
 				return
 			}
@@ -301,7 +302,7 @@ func (bru *bruter) checkTimeout() {
 
 		//empty link
 		if currentTab == nil {
-			fmt.Println("------------------------")
+			fmt.Println("-------\n-------\n----------")
 			return
 		}
 
