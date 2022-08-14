@@ -117,7 +117,6 @@ func (bru *bruter) recvDNS(signal chan bool, recvEndSignal chan struct{}) {
 		select {
 		case <-recvEndSignal:
 			close(bruteResults)
-			close(removedTabChan)
 			close(bru.retryChan)
 			return
 		default:
@@ -194,7 +193,7 @@ func (bru *bruter) recvDNS(signal chan bool, recvEndSignal chan struct{}) {
 				if err != nil {
 					continue
 				}
-				removedTabChan <- tab
+                bru.statusTabLinkList.remove(tab)
 			}
 
 		}

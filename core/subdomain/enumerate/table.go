@@ -36,6 +36,7 @@ type statusTable struct {
 }
 
 type tableLinkList struct {
+	done int64
 	size int64
 	head *statusTable
 	tail *statusTable
@@ -76,15 +77,15 @@ func (link *tableLinkList) remove(tab *statusTable) error {
 	if link.isEmpty() {
 		return emptyLink
 	}
-    if tab == nil {
-        return notFound
-    }
+	if tab == nil {
+		return notFound
+	}
 	//the last node
 	if tab == tab.pre {
 		link.tail = nil
 		link.head = nil
 		tab = nil
-		link.size--
+		link.done++
 		return nil
 	}
 	if tab == link.head {
@@ -96,7 +97,7 @@ func (link *tableLinkList) remove(tab *statusTable) error {
 	tab.pre.next = tab.next
 	tab.next.pre = tab.pre
 	tab = nil
-	link.size--
+	link.done++
 	return nil
 }
 

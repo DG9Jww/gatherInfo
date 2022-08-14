@@ -35,9 +35,6 @@ var (
 
 	bruteResults = make(chan RecvResults, 100)
 
-	//tables need being removed
-	removedTabChan chan *statusTable
-
 	//the number of total valid subdomain
 	total int32
 )
@@ -92,7 +89,6 @@ func newBruter(cfg *config.SubDomainConfig) *bruter {
 	packetSize := int64(100) //the size of DNS packet is about 74
 	myRate := cfg.BandWidth / packetSize
 	myLinkList := initTabLinkList()
-	removedTabChan = make(chan *statusTable, myRate)
 
 	myHandle, _ = pcap.OpenLive(myEthTab.devName, snapshot, promisc, timeout)
 	b := &bruter{
@@ -175,7 +171,7 @@ func Run(cfg *config.SubDomainConfig) {
 
 	//     ===== a goroutine for check timeout packet =====
 	//Throught continuous cycle detection,put the time out statusTable into retryChan
-	go bruter.checkTimeout()
+	go bruter.checkTimeout(recvEndSignal)
 
 	//     ======== a goroutine for processing results ========
 	go func(filterWildCard bool) {
@@ -203,26 +199,6 @@ func Run(cfg *config.SubDomainConfig) {
 		}
 	}(cfg.WildCard)
 
-	//     ============ a goroutine for removing statusTable ==============
-
-	go func() {
-		for tab := range removedTabChan {
-			err := bruter.statusTabLinkList.remove(tab)
-			if err == nil {
-				bar.Cur++
-				continue
-			}
-			if err == notFound {
-				continue
-			}
-			//if err equal emptyLink which means the task was finished
-			if err == emptyLink {
-				close(recvEndSignal)
-				return
-			}
-		}
-	}()
-
 	//     ============ print progress ==============
 	go func() {
 
@@ -232,7 +208,7 @@ func Run(cfg *config.SubDomainConfig) {
 				return
 			default:
 				time.Sleep(time.Millisecond * 40)
-				fmt.Printf("\r[%d/%d] Running |....", bar.Cur, bar.Total)
+				fmt.Printf("\r[%d/%d] Running ....", bar.Cur, bar.Total)
 			}
 		}
 	}()
@@ -288,7 +264,7 @@ func (bru *bruter) recordStatus(domain, resolver string, srcPort uint16, flagID 
 
 //check the timeout item from statusTableChan
 //and put the timeout item into retryChan
-func (bru *bruter) checkTimeout() {
+func (bru *bruter) checkTimeout(recvEndSignal chan struct{}) {
 	currentTab := bru.statusTabLinkList.head
 
 	//in case this goroutine run before sending packet goroutine
@@ -303,13 +279,14 @@ func (bru *bruter) checkTimeout() {
 	for {
 
 		//empty link
-		if currentTab == nil {
+		if bru.statusTabLinkList.isEmpty() {
+			close(recvEndSignal)
 			return
 		}
 
 		if currentTab.retry >= 2 {
 			nextTab := currentTab.next
-			removedTabChan <- currentTab
+			bru.statusTabLinkList.remove(currentTab)
 			currentTab = nextTab
 			continue
 		}
