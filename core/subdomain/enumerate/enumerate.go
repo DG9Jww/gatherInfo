@@ -208,7 +208,7 @@ func Run(cfg *config.SubDomainConfig) {
 				return
 			default:
 				time.Sleep(time.Millisecond * 40)
-				fmt.Printf("\r[%d/%d] Running ....", bar.Cur, bar.Total)
+				fmt.Printf("\r[%d/%d] Done/Total Running ....", bruter.statusTabLinkList.done, bar.Total)
 			}
 		}
 	}()
@@ -241,7 +241,7 @@ func Run(cfg *config.SubDomainConfig) {
 	//buffer
 	time.Sleep(time.Second * 5)
 
-	logger.ConsoleLog(logger.CustomizeLog(logger.GREEN, ""), fmt.Sprintf("===== %d Subdomain Found =====", total))
+	logger.ConsoleLog(logger.CustomizeLog(logger.GREEN, "[*]"), fmt.Sprintf("===== %d Subdomain Found =====", total))
 
 }
 
