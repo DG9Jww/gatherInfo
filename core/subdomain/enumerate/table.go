@@ -76,6 +76,9 @@ func (link *tableLinkList) remove(tab *statusTable) error {
 	if link.isEmpty() {
 		return emptyLink
 	}
+    if tab == nil {
+        return notFound
+    }
 	//the last node
 	if tab == tab.pre {
 		link.tail = nil

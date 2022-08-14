@@ -114,7 +114,6 @@ func Run(cfg *config.SubDomainConfig) {
 	defer bruter.handle.Close()
 	//progress bar
 	bar := common.NewBar()
-    
 
 	//limit the rate according to the bandwith option
 	limiter := rate.NewLimiter(rate.Every(time.Duration(time.Second.Nanoseconds()/bruter.rate)), int(bruter.rate))
@@ -128,11 +127,6 @@ func Run(cfg *config.SubDomainConfig) {
 
 	//     ===== a goroutine for receiving DNS packet =====
 	go bruter.recvDNS(sendingSignal, recvEndSignal)
-
-	//     ===== a goroutine for check timeout packet =====
-	//Throught continuous cycle detection,put the time out statusTable into retryChan
-
-	go bruter.checkTimeout()
 
 	//    	===== A goroutine for retry =====
 	//Trying to get statusTable from retryChan and
@@ -179,6 +173,10 @@ func Run(cfg *config.SubDomainConfig) {
 		return
 	}
 
+	//     ===== a goroutine for check timeout packet =====
+	//Throught continuous cycle detection,put the time out statusTable into retryChan
+	go bruter.checkTimeout()
+
 	//     ======== a goroutine for processing results ========
 	go func(filterWildCard bool) {
 		for res := range bruteResults {
@@ -210,27 +208,31 @@ func Run(cfg *config.SubDomainConfig) {
 	go func() {
 		for tab := range removedTabChan {
 			err := bruter.statusTabLinkList.remove(tab)
+			if err == nil {
+				bar.Cur++
+				continue
+			}
+			if err == notFound {
+				continue
+			}
 			//if err equal emptyLink which means the task was finished
 			if err == emptyLink {
-                fmt.Println("11111111111111111")
 				close(recvEndSignal)
 				return
 			}
-			bar.Cur++
 		}
-		return
 	}()
-
 
 	//     ============ print progress ==============
 	go func() {
+
 		for {
 			select {
 			case <-recvEndSignal:
 				return
 			default:
 				time.Sleep(time.Millisecond * 40)
-				fmt.Printf("\r%d/%d", bar.Cur, bar.Total)
+				fmt.Printf("\r[%d/%d] Running |....", bar.Cur, bar.Total)
 			}
 		}
 	}()
@@ -240,7 +242,7 @@ func Run(cfg *config.SubDomainConfig) {
 		return
 	}
 
-    //start range file
+	//start range file
 	for scanner.Scan() {
 		for _, mainDomain := range bruter.domain {
 			//get parameters
@@ -252,9 +254,9 @@ func Run(cfg *config.SubDomainConfig) {
 			limiter.Wait(ctx)
 			//record status and send DNS packet
 			table := bruter.recordStatus(domain, resolver, bruter.srcPort, flagID)
-			bar.Total++
 			bruter.sendDNS(domain, resolver, flagID)
 			table.status = 1
+			bar.Total++
 		}
 	}
 
@@ -302,7 +304,6 @@ func (bru *bruter) checkTimeout() {
 
 		//empty link
 		if currentTab == nil {
-			fmt.Println("-------\n-------\n----------")
 			return
 		}
 
