@@ -207,7 +207,7 @@ func Run(cfg *config.SubDomainConfig) {
 			case <-recvEndSignal:
 				return
 			default:
-				time.Sleep(time.Millisecond * 40)
+				time.Sleep(time.Millisecond * 100)
 				fmt.Printf("\r[%d/%d] Done/Total Running ....", bruter.statusTabLinkList.done, bar.Total)
 			}
 		}
@@ -241,7 +241,7 @@ func Run(cfg *config.SubDomainConfig) {
 	//buffer
 	time.Sleep(time.Second * 5)
 
-	logger.ConsoleLog(logger.CustomizeLog(logger.GREEN, "[*]"), fmt.Sprintf("===== %d Subdomain Found =====", total))
+	logger.ConsoleLog(logger.CustomizeLog(logger.GREEN, "\n[*]"), fmt.Sprintf("===== %d Subdomain Found =====", total))
 
 }
 
@@ -281,7 +281,6 @@ func (bru *bruter) checkTimeout(recvEndSignal chan struct{}) {
 		//which means all tasks done
 		if bru.statusTabLinkList.isEmpty() && bru.statusTabLinkList.done == bru.statusTabLinkList.size {
 			close(recvEndSignal)
-            fmt.Println("here done")
 			return
 		}
 
@@ -299,9 +298,11 @@ func (bru *bruter) checkTimeout(recvEndSignal chan struct{}) {
 
 		//retry
 		if time.Since(currentTab.time) > time.Second*5 && currentTab.retry < 2 && currentTab.status == 1 {
+			nextTab := currentTab.next
 			currentTab.status = 0
 			bru.retryChan <- currentTab
+			currentTab = nextTab
+			continue
 		}
-		currentTab = currentTab.next
 	}
 }

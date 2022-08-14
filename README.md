@@ -6,6 +6,9 @@
 - [ ] 端口扫描
 - [ ] 指纹识别
 
+### 依赖
+`windows` 需要安装`WinPcap` [点这下载](https://www.winpcap.org/install/default.htm) 
+`linux` 下需安装`libpcap-dev`
 ### 子域名模块
 
 - [x] 分为API查找和子域名爆破
