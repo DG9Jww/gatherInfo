@@ -284,6 +284,11 @@ func (bru *bruter) checkTimeout(recvEndSignal chan struct{}) {
 			return
 		}
 
+		if currentTab == nil {
+			currentTab = bru.statusTabLinkList.head
+			continue
+		}
+
 		if currentTab.retry >= 2 {
 			nextTab := currentTab.next
 			bru.statusTabLinkList.remove(currentTab)
