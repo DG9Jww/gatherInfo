@@ -278,9 +278,10 @@ func (bru *bruter) checkTimeout(recvEndSignal chan struct{}) {
 
 	for {
 
-		//empty link
-		if bru.statusTabLinkList.isEmpty() {
+		//which means all tasks done
+		if bru.statusTabLinkList.isEmpty() && bru.statusTabLinkList.done == bru.statusTabLinkList.size {
 			close(recvEndSignal)
+            fmt.Println("here done")
 			return
 		}
 
