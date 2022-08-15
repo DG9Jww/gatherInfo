@@ -267,6 +267,8 @@ func (bru *bruter) checkTimeout(recvEndSignal chan struct{}) {
 
 	//in case this goroutine run before sending packet goroutine
 	for {
+		if bru.statusTabLinkList.size > 14950 {
+		}
 		if currentTab != nil && bru.statusTabLinkList.size > 0 {
 			break
 		} else {
@@ -303,6 +305,6 @@ func (bru *bruter) checkTimeout(recvEndSignal chan struct{}) {
 			continue
 		}
 
-        currentTab = currentTab.next
+		currentTab = currentTab.next
 	}
 }

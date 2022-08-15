@@ -1,9 +1,12 @@
 package dirscan
 
 import (
+	"net/http"
 	"os"
+	"strings"
 	"sync"
 
+	"github.com/DG9Jww/gatherInfo/common"
 	"github.com/DG9Jww/gatherInfo/config"
 	"github.com/DG9Jww/gatherInfo/logger"
 )
@@ -37,6 +40,15 @@ type client struct {
 
 	//filter string
 	filterStr string
+
+	//proxy
+	proxy string
+
+	//method
+	method string
+
+	//header
+	header string
 }
 
 func NewClient(cfg *config.DirScanConfig) *client {
@@ -48,8 +60,28 @@ func NewClient(cfg *config.DirScanConfig) *client {
 		payloadList: cfg.PayloadList,
 		validCode:   cfg.ValidCode,
 		filterStr:   cfg.FilterStr,
+		proxy:       cfg.Proxy,
+		method:      cfg.Method,
+		header:      cfg.Header,
 	}
 	return c
+}
+
+func (cli *client) GenerateRequest(url string) (*http.Request, error) {
+    
+	req, err := http.NewRequest(cli.method, url, nil)
+    if cli.header != "" {
+        tmp := strings.Split(cli.header,":")
+        key := strings.TrimSpace(tmp[0])
+        value := strings.TrimSpace(tmp[1])
+        req.Header.Add(key,value)
+    }else{
+        req.Header.Set("User-Agent",common.RandomAgent())
+    }
+	if err != nil {
+		return nil, err
+	}
+	return req, err
 }
 
 func dirPrint(code int, file *os.File, content string) {

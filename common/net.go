@@ -49,7 +49,7 @@ func NewRequest(method string, url string, body io.Reader) (*http.Request, error
 	if err != nil {
 		return nil, err
 	}
-	r.Header.Set("User-Agent", randomAgent())
+	r.Header.Set("User-Agent", RandomAgent())
 	return r, nil
 }
 
@@ -67,7 +67,7 @@ func ReadHttpBody(r *http.Response) []byte {
 }
 
 //random user agent
-func randomAgent() string {
+func RandomAgent() string {
 	var headers = []string{
 		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.82 Safari/537.36",
 		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_0) AppleWebKit/535.11 (KHTML, like Gecko) Chrome/17.0.963.56 Safari/535.11",

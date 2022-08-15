@@ -1,7 +1,10 @@
 package dirscan
 
 import (
+	"crypto/tls"
 	"fmt"
+	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -19,7 +22,6 @@ func checkConfig(cfg *config.DirScanConfig) bool {
 		return false
 	}
 
-
 	if cfg.PayloadDic == "" {
 		logger.ConsoleLog(logger.ERROR, "DirScan payload dictionary must be set")
 		return false
@@ -28,7 +30,7 @@ func checkConfig(cfg *config.DirScanConfig) bool {
 }
 
 //do task
-func (cli *client) DoRequest(url string, wg *sync.WaitGroup, file *os.File) func() {
+func (cli *client) DoRequest(req *http.Request, wg *sync.WaitGroup, file *os.File, client *http.Client) func() {
 	return func() {
 		defer func() {
 			wg.Done()
@@ -37,22 +39,18 @@ func (cli *client) DoRequest(url string, wg *sync.WaitGroup, file *os.File) func
 			cli.lock.Unlock()
 		}()
 
-		r, err := common.NewRequest("GET", url, nil)
-		if err != nil {
-			return
-		}
-		resp, err := common.HttpRequest(r)
-
+		resp, err := client.Do(req)
+		url := req.URL.String()
 		//err != nil which means invalid
 		if err != nil {
 
 			//try http again
 			url = strings.ReplaceAll(url, "https", "http")
-			r, err := common.NewRequest("GET", url, nil)
+			req, err := cli.GenerateRequest(url)
 			if err != nil {
 				return
 			}
-			resp, err = common.HttpRequest(r)
+			resp, err = client.Do(req)
 			if err != nil {
 				return
 			}
@@ -61,8 +59,17 @@ func (cli *client) DoRequest(url string, wg *sync.WaitGroup, file *os.File) func
 		body := common.ReadHttpBody(resp)
 		code := resp.StatusCode
 		//if valid,processing the result
+		var isValid bool
+		if cli.validCode == nil {
+			isValid = true
+		}
 		if common.MatchInt(code, cli.validCode) {
+			isValid = true
+		}
+
+		if isValid {
 			temp := fmt.Sprintf("%d %s", code, url)
+
 			//filter
 			if len(cli.filterStr) > 0 {
 				if common.MatchStr(cli.filterStr, string(body)) {
@@ -88,7 +95,7 @@ func (cli *client) DoRequest(url string, wg *sync.WaitGroup, file *os.File) func
 	}
 }
 
-func (cli *client) Scan(domain string, wg1 *sync.WaitGroup) func() {
+func (cli *client) Scan(domain string, wg1 *sync.WaitGroup, client *http.Client) func() {
 	return func() {
 		var baseUrl string
 		if strings.Contains(domain, "http") {
@@ -97,9 +104,6 @@ func (cli *client) Scan(domain string, wg1 *sync.WaitGroup) func() {
 			baseUrl = "https://" + domain
 		}
 		var wg sync.WaitGroup
-		//Every subdomain is a single goroutine
-		//and every subdomain goroutine need multiple sub-goroutine
-		//to run "DirScan".Just like a nesting goroutine
 		p := common.NewPool(cli.coroutine)
 
 		//file for output
@@ -111,7 +115,11 @@ func (cli *client) Scan(domain string, wg1 *sync.WaitGroup) func() {
 		}
 		for _, payload := range cli.payloadList {
 			url := baseUrl + "/" + payload
-			p.Submit(cli.DoRequest(url, &wg, file))
+			req, err := cli.GenerateRequest(url)
+			if err != nil {
+				continue
+			}
+			p.Submit(cli.DoRequest(req, &wg, file, client))
 			wg.Add(1)
 		}
 
@@ -123,6 +131,9 @@ func (cli *client) Scan(domain string, wg1 *sync.WaitGroup) func() {
 func (cli *client) Run() {
 	logger.ConsoleLog(logger.NORMAL, "Dirscan is Running......")
 
+	if strings.EqualFold(cli.method, "POST") {
+		logger.ConsoleLog(logger.ERROR, "POST method is not supported.")
+	}
 	//load payload file
 	handle := common.LoadFile(cli.payloadDic)
 	cli.payloadList = common.FileToSlice(handle)
@@ -132,16 +143,23 @@ func (cli *client) Run() {
 	p := common.NewPool(30)
 	defer p.Release()
 
-	//If subdomain module has already been enable,domainList in dirScan
-	//will be replaced by subdomain module results
-	logger.ConsoleLog(logger.WARN, "subdomain did not enable")
+	//generate Client and set proxy
+	client := common.NewHttpClient()
+	if cli.proxy != "" {
+		var proxy = func(*http.Request) (*url.URL, error) {
+			return url.Parse("http://127.0.0.1:8080")
+		}
+		t := &http.Transport{Proxy: proxy, TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
+		client.Transport = t
+	}
+
 	//if exist url dictionary
 	if cli.urlDic != "" {
 		handle := common.LoadFile(cli.urlDic)
 		cli.urlList = common.FileToSlice(handle)
 	}
 	for _, v := range cli.urlList {
-		p.Submit(cli.Scan(v, &wg))
+		p.Submit(cli.Scan(v, &wg, client))
 		wg.Add(1)
 	}
 

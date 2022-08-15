@@ -80,53 +80,54 @@ func Run(cfg *config.SubDomainConfig, isDir bool, wg *sync.WaitGroup) {
 			enumerate.Run(cfg)
 		}
 		close(result.FinalResults)
-	}
 
-	var total = len(tmpSlice)
-	logger.ConsoleLog(logger.INFO, fmt.Sprintf("===== %d Subdomain Found =====", total))
+		var total = len(tmpSlice)
+		logger.ConsoleLog(logger.INFO, fmt.Sprintf("===== %d Subdomain Found =====", total))
 
-	//validate whether the subdomain is live
-	if cfg.Validate {
-		var done int
-		var barSignal = make(chan struct{})
-		//progress bar
-		go func(signal chan struct{}) {
-			for {
-				select {
-				case <-signal:
-					return
-				default:
-					time.Sleep(time.Millisecond * 100)
-					fmt.Printf("\r[%d/%d]", done, total)
+		//validate whether the subdomain is live
+		if cfg.Validate {
+			var done int
+			var barSignal = make(chan struct{})
+			//progress bar
+			go func(signal chan struct{}) {
+				for {
+					select {
+					case <-signal:
+						return
+					default:
+						time.Sleep(time.Millisecond * 100)
+						fmt.Printf("\r[%d/%d]", done, total)
+					}
 				}
+			}(barSignal)
+			pool := common.NewPool(20)
+			defer pool.Release()
+			var wg sync.WaitGroup
+			for _, v := range resList {
+				pool.Submit(isLive(v, &wg, &done))
+				wg.Add(1)
 			}
-		}(barSignal)
-		pool := common.NewPool(20)
-		defer pool.Release()
-		var wg sync.WaitGroup
-		for _, v := range resList {
-			pool.Submit(isLive(v, &wg, &done))
-			wg.Add(1)
+			wg.Wait()
+			close(barSignal)
 		}
-		wg.Wait()
-		close(barSignal)
+
+		//out put excel file
+		if cfg.OutPut != "" {
+			f := excelize.NewFile()
+			f.SetSheetRow("Sheet1", "A1", &[]interface{}{"SubdomainName", "ParsedResult", "StatusCode"})
+			for index, res := range resList {
+				f.SetSheetRow("Sheet1", fmt.Sprintf("A%d", index+2), &[]interface{}{res.GetSubdomain(), res.GetRecord(), res.GetCode()})
+			}
+			if _, err := os.Stat("output"); err != nil {
+				os.Mkdir("output", 0755)
+			}
+			if err := f.SaveAs("output/" + cfg.OutPut); err != nil {
+				logger.ConsoleLog(logger.ERROR, err.Error())
+			}
+			logger.ConsoleLog(logger.INFO, fmt.Sprintf("Output file was save as %s", cfg.OutPut))
+		}
 	}
 
-	//out put excel file
-	if cfg.OutPut != "" {
-		f := excelize.NewFile()
-		f.SetSheetRow("Sheet1", "A1", &[]interface{}{"SubdomainName", "ParsedResult", "StatusCode"})
-		for index, res := range resList {
-			f.SetSheetRow("Sheet1", fmt.Sprintf("A%d", index+2), &[]interface{}{res.GetSubdomain(), res.GetRecord(), res.GetCode()})
-		}
-		if _, err := os.Stat("output"); err != nil {
-			os.Mkdir("output", 0755)
-		}
-		if err := f.SaveAs("output/" + cfg.OutPut); err != nil {
-			logger.ConsoleLog(logger.ERROR, err.Error())
-		}
-		logger.ConsoleLog(logger.INFO, fmt.Sprintf("Output file was save as %s", cfg.OutPut))
-	}
 	wg.Done()
 }
 
