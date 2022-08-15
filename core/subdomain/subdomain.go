@@ -33,16 +33,13 @@ func Run(cfg *config.SubDomainConfig, isDir bool, wg *sync.WaitGroup) {
 			for r := range result.FinalResults {
 				s := fmt.Sprintf("%s[%s]%s %s", logger.BLUE, r.GetSubdomain(), logger.ENDC, r.GetRecord())
 				logger.ConsoleLog(logger.CustomizeLog(logger.WHITE, fmt.Sprintf("\r[%s%s%s]", logger.WHITE, "+", logger.ENDC)), s)
-				if cfg.Validate || cfg.OutPut != "" {
-					resList = append(resList, r)
-				}
+				resList = append(resList, r)
 			}
 		}()
 
 		//different mode
 		switch cfg.Mode {
 		case "":
-			subdomainList = apis.Run(cfg.Domain)
 			subdomainList = apis.Run(cfg.Domain)
 			for _, subdomain := range subdomainList {
 				ip, _ := net.LookupIP(subdomain)
@@ -76,6 +73,8 @@ func Run(cfg *config.SubDomainConfig, isDir bool, wg *sync.WaitGroup) {
 		}
 		close(result.FinalResults)
 	}
+
+	logger.ConsoleLog(logger.CustomizeLog(logger.GREEN, "\n[*]"), fmt.Sprintf("===== %d Subdomain Found =====", len(resList)))
 
 	//validate whether the subdomain is live
 	if cfg.Validate {

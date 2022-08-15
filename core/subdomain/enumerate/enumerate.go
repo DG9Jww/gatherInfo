@@ -241,7 +241,6 @@ func Run(cfg *config.SubDomainConfig) {
 	//buffer
 	time.Sleep(time.Second * 5)
 
-	logger.ConsoleLog(logger.CustomizeLog(logger.GREEN, "\n[*]"), fmt.Sprintf("===== %d Subdomain Found =====", total))
 
 }
 
