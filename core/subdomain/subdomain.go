@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/DG9Jww/gatherInfo/common"
 	"github.com/DG9Jww/gatherInfo/config"
@@ -81,18 +82,34 @@ func Run(cfg *config.SubDomainConfig, isDir bool, wg *sync.WaitGroup) {
 		close(result.FinalResults)
 	}
 
-	logger.ConsoleLog(logger.CustomizeLog(logger.GREEN, "\n[*]"), fmt.Sprintf("===== %d Subdomain Found =====", len(tmpSlice)))
+	var total = len(tmpSlice)
+	logger.ConsoleLog(logger.INFO, fmt.Sprintf("===== %d Subdomain Found =====", total))
 
 	//validate whether the subdomain is live
 	if cfg.Validate {
+		var done int
+		var barSignal = make(chan struct{})
+		//progress bar
+		go func(signal chan struct{}) {
+			for {
+				select {
+				case <-signal:
+					return
+				default:
+					time.Sleep(time.Millisecond * 100)
+					fmt.Printf("\r[%d/%d]", done, total)
+				}
+			}
+		}(barSignal)
 		pool := common.NewPool(20)
 		defer pool.Release()
 		var wg sync.WaitGroup
 		for _, v := range resList {
-			pool.Submit(isLive(v, &wg))
+			pool.Submit(isLive(v, &wg, &done))
 			wg.Add(1)
 		}
 		wg.Wait()
+		close(barSignal)
 	}
 
 	//out put excel file
@@ -114,9 +131,12 @@ func Run(cfg *config.SubDomainConfig, isDir bool, wg *sync.WaitGroup) {
 }
 
 // validate whether the url is live
-func isLive(res *result.Result, wg *sync.WaitGroup) func() {
+func isLive(res *result.Result, wg *sync.WaitGroup, done *int) func() {
 	return func() {
-		defer wg.Done()
+		defer func() {
+			wg.Done()
+			*done++
+		}()
 		subdomain := res.GetSubdomain()
 		url := fmt.Sprintf("https://%s", subdomain)
 		req, err := common.NewRequest("GET", url, nil)

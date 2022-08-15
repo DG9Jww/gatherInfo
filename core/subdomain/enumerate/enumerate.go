@@ -302,5 +302,7 @@ func (bru *bruter) checkTimeout(recvEndSignal chan struct{}) {
 			currentTab = nextTab
 			continue
 		}
+
+        currentTab = currentTab.next
 	}
 }
