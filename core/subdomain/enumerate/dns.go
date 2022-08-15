@@ -26,7 +26,6 @@ type RecvResults struct {
 	records   []string
 }
 
-
 //send DNS packet
 func (bru *bruter) sendDNS(domain string, resolverIP string, flagID uint16) {
 	dstIP := net.ParseIP(resolverIP)
@@ -125,7 +124,7 @@ func (bru *bruter) recvDNS(signal chan bool, recvEndSignal chan struct{}) {
 				5.19
 				Here I got some issues.
 				When the network environment is pure,the program was always stuck here
-				because here is no more packet and this function can not read any packet.
+				because here is no more packets and this function can not read any packet.
 
 				How to solve this issues?
 				I set the parameter "timeout" to 1 millisecond and use NextPacket to read packet.
@@ -188,12 +187,12 @@ func (bru *bruter) recvDNS(signal chan bool, recvEndSignal chan struct{}) {
 				}
 				bruteResults <- tmpResult
 
-                //query node
+				//query node
 				tab, err := bru.statusTabLinkList.queryStatusTab(subdomain, dnsLayer.ID)
 				if err != nil {
 					continue
 				}
-                bru.statusTabLinkList.remove(tab)
+				bru.statusTabLinkList.remove(tab)
 			}
 
 		}

@@ -26,11 +26,18 @@ func Run(cfg *config.SubDomainConfig, isDir bool, wg *sync.WaitGroup) {
 	var subdomainList []string
 	//for validate && output
 	var resList []*result.Result
+	//for duplicate
+	var tmpSlice []string
 
 	if cfg.Enabled {
 		//process results
 		go func() {
 			for r := range result.FinalResults {
+				//remove duplicate
+				if common.IsStringInSlice(r.GetSubdomain(), tmpSlice) {
+					continue
+				}
+				tmpSlice = append(tmpSlice, r.GetSubdomain())
 				s := fmt.Sprintf("%s[%s]%s %s", logger.BLUE, r.GetSubdomain(), logger.ENDC, r.GetRecord())
 				logger.ConsoleLog(logger.CustomizeLog(logger.WHITE, fmt.Sprintf("\r[%s%s%s]", logger.WHITE, "+", logger.ENDC)), s)
 				resList = append(resList, r)
@@ -74,7 +81,7 @@ func Run(cfg *config.SubDomainConfig, isDir bool, wg *sync.WaitGroup) {
 		close(result.FinalResults)
 	}
 
-	logger.ConsoleLog(logger.CustomizeLog(logger.GREEN, "\n[*]"), fmt.Sprintf("===== %d Subdomain Found =====", len(resList)))
+	logger.ConsoleLog(logger.CustomizeLog(logger.GREEN, "\n[*]"), fmt.Sprintf("===== %d Subdomain Found =====", len(tmpSlice)))
 
 	//validate whether the subdomain is live
 	if cfg.Validate {

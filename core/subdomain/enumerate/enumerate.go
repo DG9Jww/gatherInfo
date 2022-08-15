@@ -148,7 +148,7 @@ func Run(cfg *config.SubDomainConfig) {
 
 	//       ============ detect wildcard domain name ===============
 	<-sendingSignal
-	logger.ConsoleLog(logger.NORMAL, "Detecting WildCard Domain Name......")
+	logger.ConsoleLog(logger.INFO, "Detecting WildCard Domain Name......")
 	var domainCounter int
 	for index, mainDomain := range bruter.domain {
 		//determine whether the domain name is wildcard domain
@@ -240,7 +240,6 @@ func Run(cfg *config.SubDomainConfig) {
 
 	//buffer
 	time.Sleep(time.Second * 5)
-
 
 }
 
