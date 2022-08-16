@@ -95,7 +95,7 @@ func Run(cfg *config.SubDomainConfig, isDir bool, wg *sync.WaitGroup) {
 					case <-signal:
 						return
 					default:
-						time.Sleep(time.Millisecond * 100)
+						time.Sleep(time.Millisecond * 50)
 						fmt.Printf("\r[%d/%d]", done, total)
 					}
 				}
@@ -122,12 +122,12 @@ func Run(cfg *config.SubDomainConfig, isDir bool, wg *sync.WaitGroup) {
 				os.Mkdir("output", 0755)
 			}
 			if err := f.SaveAs("output/" + cfg.OutPut); err != nil {
-				logger.ConsoleLog(logger.ERROR, err.Error())
+				logger.ConsoleLog(logger.ERROR, fmt.Sprintf("Save file %s error:%s", cfg.OutPut, err.Error()))
+			} else {
+				logger.ConsoleLog(logger.INFO, fmt.Sprintf("Output file was save as %s", cfg.OutPut))
 			}
-			logger.ConsoleLog(logger.INFO, fmt.Sprintf("Output file was save as %s", cfg.OutPut))
 		}
 	}
-
 	wg.Done()
 }
 

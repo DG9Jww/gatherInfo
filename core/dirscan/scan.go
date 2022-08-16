@@ -8,10 +8,13 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/DG9Jww/gatherInfo/common"
 	"github.com/DG9Jww/gatherInfo/config"
 	"github.com/DG9Jww/gatherInfo/logger"
+	"github.com/xuri/excelize/v2"
 )
 
 //Either dictionary or list must be set , but not both
@@ -30,13 +33,11 @@ func checkConfig(cfg *config.DirScanConfig) bool {
 }
 
 //do task
-func (cli *client) DoRequest(req *http.Request, wg *sync.WaitGroup, file *os.File, client *http.Client) func() {
+func (cli *client) DoRequest(req *http.Request, wg *sync.WaitGroup, file *excelize.File, client *http.Client) func() {
 	return func() {
 		defer func() {
 			wg.Done()
-			cli.lock.Lock()
-			cli.counter++
-			cli.lock.Unlock()
+			atomic.AddInt64(&cli.done, 1)
 		}()
 
 		resp, err := client.Do(req)
@@ -62,13 +63,13 @@ func (cli *client) DoRequest(req *http.Request, wg *sync.WaitGroup, file *os.Fil
 		var isValid bool
 		if cli.validCode == nil {
 			isValid = true
-		}
-		if common.MatchInt(code, cli.validCode) {
-			isValid = true
+		} else {
+			if common.MatchInt(code, cli.validCode) {
+				isValid = true
+			}
 		}
 
 		if isValid {
-			temp := fmt.Sprintf("%d %s", code, url)
 
 			//filter
 			if len(cli.filterStr) > 0 {
@@ -77,19 +78,14 @@ func (cli *client) DoRequest(req *http.Request, wg *sync.WaitGroup, file *os.Fil
 				}
 			}
 			//30X process
+			var r string
 			if common.MatchInt(code, []int{301, 302, 303, 307}) {
 				location, _ := resp.Location()
-				l := location.String()
-				temp = fmt.Sprintf("%d %s ===> %s", code, url, l)
-			} else {
-				temp = fmt.Sprintf("%d %s Length: %d", code, url, len(body))
+				r = location.String()
 			}
 
-			cli.lock.Lock()
-			cli.results = append(cli.results, temp)
-			cli.lock.Unlock()
-			dirPrint(code, file, temp)
-
+			var res = &result{url: url, code: code, redirect: r, length: len(body)}
+			cli.results <- res
 		}
 
 	}
@@ -98,6 +94,7 @@ func (cli *client) DoRequest(req *http.Request, wg *sync.WaitGroup, file *os.Fil
 func (cli *client) Scan(domain string, wg1 *sync.WaitGroup, client *http.Client) func() {
 	return func() {
 		var baseUrl string
+		var signal = make(chan struct{})
 		if strings.Contains(domain, "http") {
 			baseUrl = domain
 		} else {
@@ -107,23 +104,55 @@ func (cli *client) Scan(domain string, wg1 *sync.WaitGroup, client *http.Client)
 		p := common.NewPool(cli.coroutine)
 
 		//file for output
-		path := strings.Replace(domain, "://", "_", -1)
-		path = "output/" + path + ".txt"
-		file, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0666)
-		if err != nil {
-			logger.ConsoleLog(logger.ERROR, err.Error())
+		var f *excelize.File
+		if cli.output != "" {
+			f = excelize.NewFile()
+			f.SetSheetRow("Sheet1", "A1", &[]interface{}{"URL", "StatusCode", "Length", "Redirect"})
 		}
+
+		//a goroutine for processing results
+		go func(file *excelize.File, signal chan struct{}) {
+			var c int = 2
+			for {
+				select {
+				case <-signal:
+					return
+				case res := <-cli.results:
+					dirPrint(res)
+					if cli.output != "" {
+						file.SetSheetRow("Sheet1", fmt.Sprintf("A%d", c), &[]interface{}{res.url, res.code, res.length, res.redirect})
+						c++
+					}
+				}
+			}
+		}(f, signal)
+
 		for _, payload := range cli.payloadList {
+			payload = url.QueryEscape(payload)
 			url := baseUrl + "/" + payload
 			req, err := cli.GenerateRequest(url)
 			if err != nil {
 				continue
 			}
-			p.Submit(cli.DoRequest(req, &wg, file, client))
+			p.Submit(cli.DoRequest(req, &wg, f, client))
+			atomic.AddInt64(&cli.total, 1)
 			wg.Add(1)
 		}
 
 		wg.Wait()
+		//end processing results goroutine
+		close(signal)
+		if cli.output != "" {
+			if _, err := os.Stat("output"); err != nil {
+				os.Mkdir("output", 0755)
+			}
+			err := f.SaveAs("output/" + cli.output)
+			if err != nil {
+				logger.ConsoleLog(logger.ERROR, fmt.Sprintf("Save file %s failed :%s", cli.output, err.Error()))
+			} else {
+				logger.ConsoleLog(logger.INFO, fmt.Sprintf("Output file was save as %s ", cli.output))
+			}
+		}
 		wg1.Done()
 	}
 }
@@ -147,11 +176,25 @@ func (cli *client) Run() {
 	client := common.NewHttpClient()
 	if cli.proxy != "" {
 		var proxy = func(*http.Request) (*url.URL, error) {
-			return url.Parse("http://127.0.0.1:8080")
+			return url.Parse(cli.proxy)
 		}
 		t := &http.Transport{Proxy: proxy, TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
 		client.Transport = t
 	}
+
+	//progress bar
+	var endSignal = make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-endSignal:
+				return
+			default:
+				time.Sleep(time.Millisecond * 50)
+				fmt.Printf("\r[%d/%d] Done/Total", cli.done, cli.total)
+			}
+		}
+	}()
 
 	//if exist url dictionary
 	if cli.urlDic != "" {
@@ -164,6 +207,7 @@ func (cli *client) Run() {
 	}
 
 	wg.Wait()
+	close(endSignal)
 }
 
 func Run(cfg *config.DirScanConfig, wg *sync.WaitGroup) {
@@ -177,3 +221,5 @@ func Run(cfg *config.DirScanConfig, wg *sync.WaitGroup) {
 	}
 	wg.Done()
 }
+
+func (cli *client) ProcessResult() {}

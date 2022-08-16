@@ -269,6 +269,7 @@ _vti_pvt/administrator.pwd
 %DomainUnderLine%2018.rar
 .settings/
 _wpeprivate/config.json
+xitong
 terms
 %EXT%.php
 administrator2

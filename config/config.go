@@ -79,6 +79,7 @@ type DirScanConfig struct {
 	Proxy       string
 	Method      string
 	Header      string
+	OutPut      string
 	Enabled     bool
 }
 
@@ -169,6 +170,7 @@ func DirScanInit(cfg *DirScanConfig) {
 	dirScanCmd.Flags().StringVarP(&cfg.Proxy, "proxy", "p", "", "Proxy,such as http://127.0.0.1:8888")
 	dirScanCmd.Flags().StringVarP(&cfg.Method, "method", "m", "GET", "HTTP Request Method such as GET,HEAD,etc")
 	dirScanCmd.Flags().StringVarP(&cfg.Header, "header", "H", "", `HTTP Request Header.For example:"Authorization: sercretxxxxxx"`)
+	dirScanCmd.Flags().StringVarP(&cfg.OutPut, "output", "o", "", "OutPut file path")
 }
 
 func PortScanInit(cfg *PortScanConfig) {

@@ -21,7 +21,7 @@ type processBar struct {
 
 //
 func NewBar() *processBar {
-    return &processBar{} 
+	return &processBar{}
 }
 
 //

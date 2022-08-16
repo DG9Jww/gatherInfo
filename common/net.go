@@ -59,7 +59,7 @@ func ReadHttpBody(r *http.Response) []byte {
 		defer r.Body.Close()
 		content, err := io.ReadAll(r.Body)
 		if err != nil {
-			logger.ConsoleLog(logger.WARN, err.Error())
+			return nil
 		}
 		return content
 	}

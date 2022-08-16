@@ -1,8 +1,8 @@
 package dirscan
 
 import (
+	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"sync"
 
@@ -30,10 +30,13 @@ type client struct {
 	payloadList []string
 
 	//results
-	results []string
+	results chan *result
 
 	//count completed task
-	counter int
+	done int64
+
+	//count completed task
+	total int64
 
 	//valid statuscode
 	validCode []int
@@ -49,10 +52,21 @@ type client struct {
 
 	//header
 	header string
+
+	//output
+	output string
+}
+
+type result struct {
+	url      string
+	code     int
+	length   int
+	redirect string
 }
 
 func NewClient(cfg *config.DirScanConfig) *client {
 	c := &client{
+		results:     make(chan *result),
 		coroutine:   cfg.Coroutine,
 		urlDic:      cfg.UrlDic,
 		urlList:     cfg.UrlList,
@@ -63,37 +77,39 @@ func NewClient(cfg *config.DirScanConfig) *client {
 		proxy:       cfg.Proxy,
 		method:      cfg.Method,
 		header:      cfg.Header,
+		output:      cfg.OutPut,
 	}
 	return c
 }
 
 func (cli *client) GenerateRequest(url string) (*http.Request, error) {
-    
 	req, err := http.NewRequest(cli.method, url, nil)
-    if cli.header != "" {
-        tmp := strings.Split(cli.header,":")
-        key := strings.TrimSpace(tmp[0])
-        value := strings.TrimSpace(tmp[1])
-        req.Header.Add(key,value)
-    }else{
-        req.Header.Set("User-Agent",common.RandomAgent())
-    }
+	if err != nil {
+		return nil, err
+	}
+	if cli.header != "" {
+		tmp := strings.Split(cli.header, ":")
+		key := strings.TrimSpace(tmp[0])
+		value := strings.TrimSpace(tmp[1])
+		req.Header.Add(key, value)
+	} else {
+		req.Header.Set("User-Agent", common.RandomAgent())
+	}
 	if err != nil {
 		return nil, err
 	}
 	return req, err
 }
 
-func dirPrint(code int, file *os.File, content string) {
+func dirPrint(res *result) {
 	switch {
-	case code >= 200 && code < 300:
-		logger.ConsoleLog(logger.R20X, content)
-	case code >= 300 && code < 400:
-		logger.ConsoleLog(logger.R30X, content)
-	case code >= 400 && code < 500:
-		logger.ConsoleLog(logger.R40X, content)
-	case code >= 500:
-		logger.ConsoleLog(logger.R50X, content)
+	case res.code >= 200 && res.code < 300:
+		logger.ConsoleLog(logger.R20X, fmt.Sprintf("\r[+] %d %s  Length:%d", res.code, res.url, res.length))
+	case res.code >= 300 && res.code < 400:
+		logger.ConsoleLog(logger.R30X, fmt.Sprintf("\r[+] %d %s ==> %s Length:%d", res.code, res.url, res.redirect, res.length))
+	case res.code >= 400 && res.code < 500:
+		logger.ConsoleLog(logger.R40X, fmt.Sprintf("\r[+] %d %s  Length:%d", res.code, res.url, res.length))
+	case res.code >= 500:
+		logger.ConsoleLog(logger.R50X, fmt.Sprintf("\r[+] %d %s  Length:%d", res.code, res.url, res.length))
 	}
-	logger.LogToFile(file, content)
 }

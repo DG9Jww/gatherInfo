@@ -2,14 +2,15 @@
 
 功能如下：
 - [x] 子域名收集
-- [ ] 目录扫描
+- [x] 目录扫描
 - [ ] 端口扫描
 - [ ] 指纹识别
 
-### 依赖
+### 子域名模块
+
+#### 依赖
 `windows` 需要安装`winpcap` [点这下载](https://www.winpcap.org/install/default.htm) 
 `linux` 下需安装`libpcap-dev`
-### 子域名模块
 
 - [x] 分为api查找和子域名爆破
 - [x] 支持自定api
@@ -49,8 +50,10 @@
 - `-t` 或 `--thread int`         并发量 (默认 30)
 - `-U` 或 `--urldict string`     URL字典路径,每行一个URL
 - `-u` 或 `--urls strings`       URL,支持多个URL，用 `,` 分开
+- `-o` 或 `--output string`       结果输出文件，请使用`xlsx`后缀
 
-例如: `go run .\main.go dirscan -u https://www.example.com -m HEAD -p http://127.0.0.1:8080 -H "Authorization: xxxxxxx" -t 20 -f "not found" -c 200,301,302`
+
+例如: `go run .\main.go dirscan -u https://www.example.com -m HEAD -p http://127.0.0.1:8080 -H "Authorization: xxxxxxx" -t 20 -f "not found" -c 200,301,302 -o output.xlsx`
 
 ### 指纹识别
 
