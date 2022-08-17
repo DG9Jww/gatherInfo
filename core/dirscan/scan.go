@@ -58,6 +58,7 @@ func (cli *client) DoRequest(req *http.Request, wg *sync.WaitGroup, file *exceli
 		}
 
 		body := common.ReadHttpBody(resp)
+		defer resp.Body.Close()
 		code := resp.StatusCode
 		//if valid,processing the result
 		var isValid bool
@@ -73,10 +74,16 @@ func (cli *client) DoRequest(req *http.Request, wg *sync.WaitGroup, file *exceli
 
 			//filter
 			if len(cli.filterStr) > 0 {
+				//还有一个gzip压缩问题
+				//if resp.Uncompressed {
+				//	r, _ := gzip.NewReader(resp.Body)
+				//	b, _ := io.ReadAll(r)
+				//}
 				if common.MatchStr(cli.filterStr, string(body)) {
 					return
 				}
 			}
+
 			//30X process
 			var r string
 			if common.MatchInt(code, []int{301, 302, 303, 307}) {

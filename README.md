@@ -6,6 +6,7 @@
 - [ ] 端口扫描
 - [ ] 指纹识别
 
+<br>
 ### 子域名模块
 
 #### 依赖
@@ -29,6 +30,8 @@
 - `-o` 使用此选项，可指定输出文件名。文件输出在项目的`output`目录下，如过不存在会自动创建。输出文件应为`xlsx`格式
 
 例子：`go run ./main.go subdomain -d example.com -m api -v -o test.xlsx`
+
+<br>
 
 ### 目录扫描模块
 

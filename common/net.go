@@ -56,7 +56,6 @@ func NewRequest(method string, url string, body io.Reader) (*http.Request, error
 func ReadHttpBody(r *http.Response) []byte {
 	if r != nil {
 
-		defer r.Body.Close()
 		content, err := io.ReadAll(r.Body)
 		if err != nil {
 			return nil
